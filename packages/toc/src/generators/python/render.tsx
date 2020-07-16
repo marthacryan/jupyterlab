@@ -2,7 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import * as React from 'react';
-import { IHeading } from '../../utils/headings';
+import { INumberedHeading } from '../../utils/headings';
+import { OptionsManager } from './options_manager';
 
 /**
  * Renders a Python table of contents item.
@@ -11,10 +12,11 @@ import { IHeading } from '../../utils/headings';
  * @param item - numbered heading
  * @returns rendered item
  */
-function render(item: IHeading) {
+function render(options: OptionsManager, item: INumberedHeading) {
   let fontSizeClass = 'toc-level-size-' + item.level;
+  let numbering = item.numbering && options.numbering ? item.numbering : '';
 
-  return <span className={fontSizeClass}> {item.text} </span>;
+  return <span className={fontSizeClass}> {numbering + item.text} </span>;
 }
 
 /**

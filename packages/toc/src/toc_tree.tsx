@@ -64,9 +64,12 @@ class TOCTree extends React.Component<IProperties, IState> {
     // Map the heading objects onto a list of JSX elements...
     let i = 0;
     let list: JSX.Element[] = this.props.toc.map(el => {
+      // Set the indentation according to the level of the item
+      let paddingLeft = 20 * el.level - 5;
       return (
         <TOCItem
           heading={el}
+          paddingLeft={paddingLeft}
           itemRenderer={this.props.itemRenderer}
           key={`${el.text}-${el.level}-${i++}`}
         />

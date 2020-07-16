@@ -22,6 +22,11 @@ interface IProperties extends React.Props<TOCItem> {
    * @returns rendered heading
    */
   itemRenderer: (item: IHeading) => JSX.Element | null;
+
+  /**
+   * Padding left in pixels (depends on the level)
+   */
+   paddingLeft?: number;
 }
 
 /**
@@ -54,7 +59,7 @@ class TOCItem extends React.Component<IProperties, IState> {
     };
 
     let content = this.props.itemRenderer(heading);
-    return content && <li onClick={onClick}>{content}</li>;
+    return content && <li onClick={onClick} style={{paddingLeft: this.props.paddingLeft+'px'}}>{content}</li>;
   }
 }
 

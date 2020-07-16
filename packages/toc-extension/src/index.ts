@@ -22,6 +22,7 @@ import {
   createPythonGenerator,
   createRenderedMarkdownGenerator
 } from '@jupyterlab/toc';
+import { tocIcon } from '@jupyterlab/ui-components';
 
 /**
  * Activates the ToC extension.
@@ -54,7 +55,7 @@ async function activateTOC(
   const registry = new Registry();
 
   // Add the ToC to the left area:
-  toc.title.iconClass = 'jp-TableOfContents-icon jp-SideBar-tabIcon';
+  toc.title.icon = tocIcon;
   toc.title.caption = 'Table of Contents';
   toc.id = 'table-of-contents';
   labShell.add(toc, 'left', { rank: 700 });
@@ -91,7 +92,7 @@ async function activateTOC(
   registry.add(latexGenerator);
 
   // Create a Python generator:
-  const pythonGenerator = createPythonGenerator(editorTracker);
+  const pythonGenerator = createPythonGenerator(editorTracker, toc);
   registry.add(pythonGenerator);
 
   // Update the ToC when the active widget changes:
