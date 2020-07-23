@@ -91,7 +91,7 @@ async function activateTOC(
   registry.add(latexGenerator);
 
   // Create a Python generator:
-  const pythonGenerator = createPythonGenerator(editorTracker);
+  const pythonGenerator = createPythonGenerator(editorTracker, toc);
   registry.add(pythonGenerator);
 
   // Update the ToC when the active widget changes:
