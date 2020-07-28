@@ -43,7 +43,7 @@ describe('@jupyterlab/toc', () => {
   beforeAll(async () => {
     const opener: DocumentManager.IWidgetOpener = {
       open: widget => {
-        /* no op */
+        console.debug('opener');
       }
     };
     factory = new TextModelFactory();
@@ -56,13 +56,13 @@ describe('@jupyterlab/toc', () => {
       opener,
       manager: serviceManager
     });
-    context = await initNotebookContext({ manager: serviceManager, startKernel: true });
-    context.model.fromJSON(NBTestUtils.DEFAULT_CONTENT);
-    await serviceManager.contents.save(context.path, {
-      type: 'notebook',
-      format: 'json',
-      content: NBTestUtils.DEFAULT_CONTENT
-    });
+    // context = await initNotebookContext({ manager: serviceManager, startKernel: true });
+    // context.model.fromJSON(NBTestUtils.DEFAULT_CONTENT);
+    // await serviceManager.contents.save(context.path, {
+    //   type: 'notebook',
+    //   format: 'json',
+    //   content: NBTestUtils.DEFAULT_CONTENT
+    // });
   });
 
   afterAll(async () => {
@@ -82,7 +82,7 @@ describe('@jupyterlab/toc', () => {
     });
 
     describe('#current', () => {
-      let notebookWidget: NotebookPanel;
+      // let notebookWidget: NotebookPanel;
       let registry: ToC.TableOfContentsRegistry;
       let notebookGenerator: ToC.TableOfContentsRegistry.IGenerator<NotebookPanel>;
       let tracker: NotebookTracker;
@@ -107,10 +107,12 @@ describe('@jupyterlab/toc', () => {
       });
 
       it ('should find the notebook generator', async () => {
-        notebookWidget = NBTestUtils.createNotebookPanel(context);
+        context = await initNotebookContext({ manager: serviceManager, startKernel: true });
+        const notebookWidget = NBTestUtils.createNotebookPanel(context);
         expect(notebookWidget).toBeInstanceOf(NotebookPanel);
         tracker.add(notebookWidget);
         const foundNotebookGenerator = registry.find(notebookWidget);
+        console.debug(foundNotebookGenerator);
         expect(foundNotebookGenerator).toBeDefined();
       });
     });
