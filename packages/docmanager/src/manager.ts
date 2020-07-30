@@ -200,6 +200,7 @@ export class DocumentManager implements IDocumentManager {
    * context exists.
    */
   contextForWidget(widget: Widget): DocumentRegistry.Context | undefined {
+    // console.debug(this._contexts);
     return this._widgetManager.contextForWidget(widget);
   }
 

@@ -12,7 +12,7 @@ import {
   NotebookTracker
 } from '@jupyterlab/notebook';
 import { initNotebookContext } from '@jupyterlab/testutils';
-import { DocumentManager, IDocumentManager } from '@jupyterlab/docmanager';
+import { DocumentManager } from '@jupyterlab/docmanager';
 import * as ToC from '@jupyterlab/toc';
 import { RenderMimeRegistry } from '@jupyterlab/rendermime';
 import { ServiceManager } from '@jupyterlab/services';
@@ -22,54 +22,40 @@ import { JupyterServer } from '@jupyterlab/testutils/lib/start_jupyter_server';
 import { NBTestUtils, Mock } from '@jupyterlab/testutils';
 
 const server = new JupyterServer();
+let manager: DocumentManager;
+let widget: ToC.TableOfContents;
+let registry: DocumentRegistry;
+let serviceManager: ServiceManager.IManager;
+let factory: TextModelFactory;
+let context: Context<INotebookModel>;
 
 beforeAll(async () => {
   jest.setTimeout(20000);
   await server.start();
+  const opener: DocumentManager.IWidgetOpener = {
+    open: widget => {
+      console.debug('opener');
+    }
+  };
+  factory = new TextModelFactory();
+  registry = new DocumentRegistry({
+    textModelFactory: factory
+  });
+  serviceManager = new Mock.ServiceManagerMock();
+  manager = new DocumentManager({
+    registry,
+    opener,
+    manager: serviceManager
+  });
 });
 
 afterAll(async () => {
+  await context.sessionContext.shutdown();
+  context.dispose();
   await server.shutdown();
 });
 
 describe('@jupyterlab/toc', () => {
-  let manager: IDocumentManager;
-  let widget: ToC.TableOfContents;
-  let registry: DocumentRegistry;
-  let serviceManager: ServiceManager.IManager;
-  let factory: TextModelFactory;
-  let context: Context<INotebookModel>;
-
-  beforeAll(async () => {
-    const opener: DocumentManager.IWidgetOpener = {
-      open: widget => {
-        console.debug('opener');
-      }
-    };
-    factory = new TextModelFactory();
-    registry = new DocumentRegistry({
-      textModelFactory: factory
-    });
-    serviceManager = new Mock.ServiceManagerMock();
-    manager = new DocumentManager({
-      registry,
-      opener,
-      manager: serviceManager
-    });
-    // context = await initNotebookContext({ manager: serviceManager, startKernel: true });
-    // context.model.fromJSON(NBTestUtils.DEFAULT_CONTENT);
-    // await serviceManager.contents.save(context.path, {
-    //   type: 'notebook',
-    //   format: 'json',
-    //   content: NBTestUtils.DEFAULT_CONTENT
-    // });
-  });
-
-  afterAll(async () => {
-    await context.sessionContext.shutdown();
-    context.dispose();
-  });
-
   describe('TableOfContents', () => {
     describe('#constructor', () => {
       it('should construct a new ToC widget', () => {
@@ -82,7 +68,7 @@ describe('@jupyterlab/toc', () => {
     });
 
     describe('#current', () => {
-      // let notebookWidget: NotebookPanel;
+      let notebookWidget: NotebookPanel;
       let registry: ToC.TableOfContentsRegistry;
       let notebookGenerator: ToC.TableOfContentsRegistry.IGenerator<NotebookPanel>;
       let tracker: NotebookTracker;
@@ -91,7 +77,7 @@ describe('@jupyterlab/toc', () => {
         registry = new ToC.TableOfContentsRegistry();
       });
 
-      it ('should create a notebook generator', () => {
+      it('should create a notebook generator', () => {
         tracker = new NotebookTracker({
           namespace: 'notebook'
         });
@@ -102,19 +88,28 @@ describe('@jupyterlab/toc', () => {
         );
       });
 
-      it ('should add a notebook generator to the registry', () => {
+      it('should add a notebook generator to the registry', () => {
         registry.add(notebookGenerator);
       });
 
-      it ('should find the notebook generator', async () => {
-        context = await initNotebookContext({ manager: serviceManager, startKernel: true });
-        const notebookWidget = NBTestUtils.createNotebookPanel(context);
+      it('should find the notebook generator', async () => {
+        context = await initNotebookContext({ manager: serviceManager });
+        // console.debug(context);
+        notebookWidget = NBTestUtils.createNotebookPanel(context);
+        NBTestUtils.populateNotebook(notebookWidget.content);
         expect(notebookWidget).toBeInstanceOf(NotebookPanel);
-        tracker.add(notebookWidget);
+        await tracker.add(notebookWidget);
         const foundNotebookGenerator = registry.find(notebookWidget);
-        console.debug(foundNotebookGenerator);
+        // console.debug(foundNotebookGenerator);
         expect(foundNotebookGenerator).toBeDefined();
+        // console.debug(manager.contextForWidget(notebookWidget.content));
+        // widget.current = { widget: notebookWidget, generator: notebookGenerator }
       });
+
+      // it ('should change current', async () => {
+      //   // console.debug(manager._contexts);
+      //   widget.current = { widget: notebookWidget, generator: notebookGenerator }
+      // });
     });
   });
 });
