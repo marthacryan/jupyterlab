@@ -393,7 +393,6 @@ export abstract class ABCWidgetFactory<
   createNew(context: DocumentRegistry.IContext<U>, source?: T): T {
     // Create the new widget
     const widget = this.createNewWidget(context, source);
-
     // Add toolbar items
     let items: DocumentRegistry.IToolbarItem[];
     if (this._toolbarFactory) {

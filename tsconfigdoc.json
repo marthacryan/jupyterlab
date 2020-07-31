@@ -5,9 +5,7 @@
     "composite": false,
     "baseUrl": ".",
     "paths": {
-      "@jupyterlab/*": [
-        "packages/*/src"
-      ]
+      "@jupyterlab/*": ["packages/*/src"]
     }
   },
   "references": [
@@ -64,6 +62,12 @@
     },
     {
       "path": "./packages/csvviewer-extension"
+    },
+    {
+      "path": "./packages/debugger"
+    },
+    {
+      "path": "./packages/debugger-extension"
     },
     {
       "path": "./packages/docmanager"

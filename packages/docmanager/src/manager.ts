@@ -200,7 +200,6 @@ export class DocumentManager implements IDocumentManager {
    * context exists.
    */
   contextForWidget(widget: Widget): DocumentRegistry.Context | undefined {
-    // console.debug(this._contexts);
     return this._widgetManager.contextForWidget(widget);
   }
 
@@ -544,14 +543,12 @@ export class DocumentManager implements IDocumentManager {
     if (!factory) {
       return undefined;
     }
-
     // Handle the kernel pereference.
     const preference = this.registry.getKernelPreference(
       path,
       widgetFactory.name,
       kernel
     );
-
     let context: Private.IContext | null;
     let ready: Promise<void> = Promise.resolve(undefined);
 
@@ -580,7 +577,6 @@ export class DocumentManager implements IDocumentManager {
     ready.catch(err => {
       widget.close();
     });
-
     return widget;
   }
 

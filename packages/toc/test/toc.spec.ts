@@ -4,55 +4,61 @@
 import 'jest';
 
 // import { Widget } from '@lumino/widgets';
-import { Context } from '@jupyterlab/docregistry';
+// import { Context } from '@jupyterlab/docregistry';
 
 import {
-  INotebookModel,
+  // NotebookModel,
   NotebookPanel,
-  NotebookTracker
+  NotebookTracker,
+  NotebookWidgetFactory,
+  NotebookModelFactory
 } from '@jupyterlab/notebook';
-import { initNotebookContext } from '@jupyterlab/testutils';
 import { DocumentManager } from '@jupyterlab/docmanager';
 import * as ToC from '@jupyterlab/toc';
 import { RenderMimeRegistry } from '@jupyterlab/rendermime';
 import { ServiceManager } from '@jupyterlab/services';
 import { DocumentRegistry, TextModelFactory } from '@jupyterlab/docregistry';
-import { JupyterServer } from '@jupyterlab/testutils/lib/start_jupyter_server';
+import { UUID } from '@lumino/coreutils';
 
-import { NBTestUtils, Mock } from '@jupyterlab/testutils';
+import { NBTestUtils, Mock, defaultRenderMime } from '@jupyterlab/testutils';
 
-const server = new JupyterServer();
 let manager: DocumentManager;
 let widget: ToC.TableOfContents;
 let registry: DocumentRegistry;
-let serviceManager: ServiceManager.IManager;
+let services: ServiceManager.IManager;
 let factory: TextModelFactory;
-let context: Context<INotebookModel>;
+// let context: Context<INotebookModel>;
 
 beforeAll(async () => {
   jest.setTimeout(20000);
-  await server.start();
   const opener: DocumentManager.IWidgetOpener = {
     open: widget => {
-      console.debug('opener');
+      // no-op
     }
   };
   factory = new TextModelFactory();
   registry = new DocumentRegistry({
     textModelFactory: factory
   });
-  serviceManager = new Mock.ServiceManagerMock();
+  const contentFactory = NBTestUtils.createNotebookPanelFactory();
+  const notebookFactory = new NotebookModelFactory({});
+  registry.addModelFactory(notebookFactory);
+  registry.addWidgetFactory(
+    new NotebookWidgetFactory({
+      modelName: 'notebook',
+      contentFactory,
+      fileTypes: ['notebook'],
+      rendermime: defaultRenderMime(),
+      mimeTypeService: NBTestUtils.mimeTypeService,
+      name: 'notebook'
+    })
+  );
+  services = new Mock.ServiceManagerMock();
   manager = new DocumentManager({
     registry,
     opener,
-    manager: serviceManager
+    manager: services
   });
-});
-
-afterAll(async () => {
-  await context.sessionContext.shutdown();
-  context.dispose();
-  await server.shutdown();
 });
 
 describe('@jupyterlab/toc', () => {
@@ -93,11 +99,16 @@ describe('@jupyterlab/toc', () => {
       });
 
       it('should find the notebook generator', async () => {
-        context = await initNotebookContext({ manager: serviceManager });
-        // console.debug(context);
-        notebookWidget = NBTestUtils.createNotebookPanel(context);
-        NBTestUtils.populateNotebook(notebookWidget.content);
-        expect(notebookWidget).toBeInstanceOf(NotebookPanel);
+        // const model = await manager.newUntitled({ type: 'notebook' });
+        // const context = await initNotebookContext({ manager: services });
+        // expect(context.model).toBeInstanceOf(NotebookModel);
+        // console.debug(context.model);
+        // const newNotebookWidget = manager.open(model.path, 'notebook');
+        const path = UUID.uuid4() + '.ipynb';
+        const newNotebookWidget = manager.createNew(path, 'notebook');
+        console.debug('2');
+        expect(newNotebookWidget).toBeInstanceOf(NotebookPanel);
+        notebookWidget = newNotebookWidget as NotebookPanel;
         await tracker.add(notebookWidget);
         const foundNotebookGenerator = registry.find(notebookWidget);
         // console.debug(foundNotebookGenerator);
