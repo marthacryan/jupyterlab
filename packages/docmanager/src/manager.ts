@@ -543,12 +543,14 @@ export class DocumentManager implements IDocumentManager {
     if (!factory) {
       return undefined;
     }
+
     // Handle the kernel pereference.
     const preference = this.registry.getKernelPreference(
       path,
       widgetFactory.name,
       kernel
     );
+
     let context: Private.IContext | null;
     let ready: Promise<void> = Promise.resolve(undefined);
 
@@ -577,6 +579,7 @@ export class DocumentManager implements IDocumentManager {
     ready.catch(err => {
       widget.close();
     });
+
     return widget;
   }
 

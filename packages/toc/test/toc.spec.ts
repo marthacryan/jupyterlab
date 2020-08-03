@@ -3,11 +3,7 @@
 
 import 'jest';
 
-// import { Widget } from '@lumino/widgets';
-// import { Context } from '@jupyterlab/docregistry';
-
 import {
-  // NotebookModel,
   NotebookPanel,
   NotebookTracker,
   NotebookWidgetFactory,
@@ -27,7 +23,6 @@ let widget: ToC.TableOfContents;
 let registry: DocumentRegistry;
 let services: ServiceManager.IManager;
 let factory: TextModelFactory;
-// let context: Context<INotebookModel>;
 
 beforeAll(async () => {
   jest.setTimeout(20000);
@@ -99,11 +94,6 @@ describe('@jupyterlab/toc', () => {
       });
 
       it('should find the notebook generator', async () => {
-        // const model = await manager.newUntitled({ type: 'notebook' });
-        // const context = await initNotebookContext({ manager: services });
-        // expect(context.model).toBeInstanceOf(NotebookModel);
-        // console.debug(context.model);
-        // const newNotebookWidget = manager.open(model.path, 'notebook');
         const path = UUID.uuid4() + '.ipynb';
         const newNotebookWidget = manager.createNew(path, 'notebook');
         console.debug('2');
@@ -111,16 +101,15 @@ describe('@jupyterlab/toc', () => {
         notebookWidget = newNotebookWidget as NotebookPanel;
         await tracker.add(notebookWidget);
         const foundNotebookGenerator = registry.find(notebookWidget);
-        // console.debug(foundNotebookGenerator);
         expect(foundNotebookGenerator).toBeDefined();
-        // console.debug(manager.contextForWidget(notebookWidget.content));
-        // widget.current = { widget: notebookWidget, generator: notebookGenerator }
       });
 
-      // it ('should change current', async () => {
-      //   // console.debug(manager._contexts);
-      //   widget.current = { widget: notebookWidget, generator: notebookGenerator }
-      // });
+      it('should change current', async () => {
+        widget.current = {
+          widget: notebookWidget,
+          generator: notebookGenerator
+        };
+      });
     });
   });
 });
