@@ -67,23 +67,26 @@ describe('@jupyterlab/toc', () => {
         expect(widget).toBeInstanceOf(ToC.TableOfContents);
       });
     });
+  });
 
-    describe('#current', () => {
-      let notebookWidget: NotebookPanel;
-      let registry: ToC.TableOfContentsRegistry;
+  describe('TableOfContentsRegistry', () => {
+    let registry: ToC.TableOfContentsRegistry;
+
+    beforeAll(() => {
+      registry = new ToC.TableOfContentsRegistry();
+    });
+
+    describe('IGenerator<NotebookPanel>', () => {
+      let notebookTracker: NotebookTracker;
       let notebookGenerator: ToC.TableOfContentsRegistry.IGenerator<NotebookPanel>;
-      let tracker: NotebookTracker;
-
-      it('should create a registry', () => {
-        registry = new ToC.TableOfContentsRegistry();
-      });
+      let notebookWidget: NotebookPanel;
 
       it('should create a notebook generator', () => {
-        tracker = new NotebookTracker({
+        notebookTracker = new NotebookTracker({
           namespace: 'notebook'
         });
         notebookGenerator = ToC.createNotebookGenerator(
-          tracker,
+          notebookTracker,
           widget,
           NBTestUtils.defaultRenderMime().sanitizer
         );
@@ -96,10 +99,9 @@ describe('@jupyterlab/toc', () => {
       it('should find the notebook generator', async () => {
         const path = UUID.uuid4() + '.ipynb';
         const newNotebookWidget = manager.createNew(path, 'notebook');
-        console.debug('2');
         expect(newNotebookWidget).toBeInstanceOf(NotebookPanel);
         notebookWidget = newNotebookWidget as NotebookPanel;
-        await tracker.add(notebookWidget);
+        await notebookTracker.add(notebookWidget);
         const foundNotebookGenerator = registry.find(notebookWidget);
         expect(foundNotebookGenerator).toBeDefined();
       });
