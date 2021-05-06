@@ -71,6 +71,7 @@ import {
 } from './model';
 
 import { InputPlaceholder, OutputPlaceholder } from './placeholder';
+import { Signal } from '@lumino/signaling';
 
 /**
  * The CSS class added to cell widgets.
@@ -1395,6 +1396,8 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     // Stop codemirror handling paste
     this.editor.setOption('handlePaste', false);
 
+    this._headerLevel = this.getHeaderInfo();
+
     // Throttle the rendering rate of the widget.
     this._monitor = new ActivityMonitor({
       signal: this.model.contentChanged,
@@ -1417,6 +1420,37 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
    */
   get ready(): Promise<void> {
     return this._ready.promise;
+  }
+
+  /**
+   * Indicates header level of cell
+   */
+  get headerLevel(): number {
+    return this._headerLevel;
+  }
+  set headerLevel(value: number) {
+    this._headerLevel = value;
+  }
+
+  get headerCollapsed(): boolean {
+    return this._headerCollapsed;
+  }
+  set headerCollapsed(value: boolean) {
+    this._headerCollapsed = value;
+    this.inputArea.promptNode
+      .getElementsByClassName('ch-button')[0]
+      .setAttribute(
+        'style',
+        `background:
+      ${
+        value ? 'var(--jp-icon-caret-right)' : 'var(--jp-icon-caret-down)'
+      } no-repeat center`
+      );
+    this.renderInput(this._renderer!);
+  }
+
+  get toggleCollapsedSignal(): Signal<this, boolean> {
+    return this._toggleCollapsedSignal;
   }
 
   /**
@@ -1444,7 +1478,54 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
    */
   protected renderInput(widget: Widget): void {
     this.addClass(RENDERED_CLASS);
+    if (
+      this._headerLevel > 0 &&
+      this.inputArea.promptNode.getElementsByClassName('ch-button').length == 0
+    ) {
+      let collapseButton = this.inputArea.promptNode.appendChild(
+        document.createElement('button')
+      );
+      collapseButton.className =
+        'bp3-button bp3-minimal jp-Button minimal ch-button';
+      collapseButton.style.background = `${
+        this._headerCollapsed
+          ? 'var(--jp-icon-caret-right)'
+          : 'var(--jp-icon-caret-down)'
+      } no-repeat center`;
+      collapseButton.onclick = () => {
+        this.headerCollapsed = !this.headerCollapsed;
+        this._toggleCollapsedSignal.emit(this._headerCollapsed);
+      };
+    }
     this.inputArea.renderInput(widget);
+  }
+
+  getHeaderInfo(): number {
+    let text = this.model.value.text;
+    const lines = text.split('\n');
+    const line = lines[0];
+    const line2 = lines.length > 1 ? lines[1] : undefined;
+    // logic here for determining if header and what level of header was stolen
+    // from the wonderful existing table of contents extension <3
+    let match = line.match(/^([#]{1,6}) (.*)/);
+    let match2 = line2 && line2.match(/^([=]{2,}|[-]{2,})/);
+    //let match3 = line.match(/<h([1-6])>(.*)<\/h\1>/i);
+    let match3 = line.match(/<h([1-6])(.*)>(.*)<\/h\1>/i);
+    //debugLog(line, match, match2, match3)
+    let isHeader =
+      match !== null ||
+      (match2 !== undefined && match2 !== null && Boolean(match2) !== false) ||
+      match3 !== null;
+    // There are only 6 levels of markdown headers so this gives one past that.
+    let level = 7;
+    if (match) {
+      level = match[1].length;
+    } else if (match2) {
+      level = match2[1][0] === '=' ? 1 : 2;
+    } else if (match3) {
+      level = parseInt(match3[1], 10);
+    }
+    return isHeader ? level : -1;
   }
 
   /**
@@ -1523,6 +1604,9 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   }
 
   private _monitor: ActivityMonitor<ICellModel, void>;
+  private _headerLevel: number;
+  private _headerCollapsed: boolean = false;
+  private _toggleCollapsedSignal = new Signal<this, boolean>(this);
   private _renderer: IRenderMime.IRenderer | null = null;
   private _rendermime: IRenderMimeRegistry;
   private _rendered = true;

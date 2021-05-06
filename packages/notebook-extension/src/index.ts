@@ -57,7 +57,9 @@ import {
   NotebookWidgetFactory,
   StaticNotebook,
   CommandEditStatus,
-  NotebookTrustStatus
+  NotebookTrustStatus,
+  HeadingsCollapser,
+  IHeadingsCollapser
 } from '@jupyterlab/notebook';
 
 import { IPropertyInspectorProvider } from '@jupyterlab/property-inspector';
@@ -274,6 +276,17 @@ const trackerPlugin: JupyterFrontEndPlugin<INotebookTracker> = {
 };
 
 /**
+ * The notebook widget tracker provider.
+ */
+const headingsCollapserPlugin: JupyterFrontEndPlugin<HeadingsCollapser> = {
+  id: '@jupyterlab/notebook-extension:headings-collapser',
+  provides: IHeadingsCollapser,
+  requires: [INotebookTracker],
+  activate: activateHeadingsCollapser,
+  autoStart: true
+};
+
+/**
  * The notebook cell factory provider.
  */
 const factory: JupyterFrontEndPlugin<NotebookPanel.IContentFactory> = {
@@ -295,7 +308,14 @@ const tools: JupyterFrontEndPlugin<INotebookTools> = {
   provides: INotebookTools,
   id: '@jupyterlab/notebook-extension:tools',
   autoStart: true,
-  requires: [INotebookTracker, IEditorServices, IStateDB, ITranslator],
+  requires: [
+    INotebookTracker,
+    IEditorServices,
+    IStateDB,
+    ITranslator,
+    ISettingRegistry,
+    ICommandPalette
+  ],
   optional: [IPropertyInspectorProvider]
 };
 
@@ -534,6 +554,7 @@ const codeConsolePlugin: JupyterFrontEndPlugin<void> = {
 const plugins: JupyterFrontEndPlugin<any>[] = [
   factory,
   trackerPlugin,
+  headingsCollapserPlugin,
   exportPlugin,
   tools,
   commandEditItem,
@@ -554,6 +575,8 @@ function activateNotebookTools(
   editorServices: IEditorServices,
   state: IStateDB,
   translator: ITranslator,
+  settings: ISettingRegistry,
+  palette: ICommandPalette,
   inspectorProvider: IPropertyInspectorProvider | null
 ): INotebookTools {
   const trans = translator.load('jupyterlab');
@@ -562,6 +585,12 @@ function activateNotebookTools(
   const activeCellTool = new NotebookTools.ActiveCellTool();
   const slideShow = NotebookTools.createSlideShowSelector(translator);
   const editorFactory = editorServices.factoryService.newInlineEditor;
+  const cellCollapserTool = new NotebookTools.CellCollapserTool({
+    app,
+    settings,
+    palette,
+    nbTrack: tracker
+  });
   const cellMetadataEditor = new NotebookTools.CellMetadataEditorTool({
     editorFactory,
     collapsed: false,
@@ -636,7 +665,11 @@ function activateNotebookTools(
 
   notebookTools.addItem({ tool: activeCellTool, section: 'common', rank: 1 });
   notebookTools.addItem({ tool: slideShow, section: 'common', rank: 2 });
-
+  notebookTools.addItem({
+    tool: cellCollapserTool,
+    section: 'common',
+    rank: 4
+  });
   notebookTools.addItem({
     tool: cellMetadataEditor,
     section: 'advanced',
@@ -658,6 +691,14 @@ function activateNotebookTools(
   }
 
   return notebookTools;
+}
+
+function activateHeadingsCollapser(
+  app: JupyterFrontEnd,
+  nbTrack: INotebookTracker
+): HeadingsCollapser {
+  console.log('Activated headings collapser!');
+  return new HeadingsCollapser(nbTrack);
 }
 
 /**

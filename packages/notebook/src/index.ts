@@ -7,6 +7,7 @@
 
 export * from './actions';
 export * from './default-toolbar';
+export * from './headings';
 export * from './model';
 export * from './modelfactory';
 export * from './notebooktools';
