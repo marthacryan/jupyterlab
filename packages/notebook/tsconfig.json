@@ -7,6 +7,9 @@
   "include": ["src/*"],
   "references": [
     {
+      "path": "../application"
+    },
+    {
       "path": "../apputils"
     },
     {
@@ -32,6 +35,9 @@
     },
     {
       "path": "../services"
+    },
+    {
+      "path": "../settingregistry"
     },
     {
       "path": "../statusbar"

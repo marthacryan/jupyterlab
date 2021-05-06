@@ -3,6 +3,9 @@
   "include": ["src/*", "test/*"],
   "references": [
     {
+      "path": "../application"
+    },
+    {
       "path": "../apputils"
     },
     {
@@ -28,6 +31,9 @@
     },
     {
       "path": "../services"
+    },
+    {
+      "path": "../settingregistry"
     },
     {
       "path": "../statusbar"
@@ -45,6 +51,9 @@
       "path": "../../testutils"
     },
     {
+      "path": "../application"
+    },
+    {
       "path": "../apputils"
     },
     {
@@ -70,6 +79,9 @@
     },
     {
       "path": "../services"
+    },
+    {
+      "path": "../settingregistry"
     },
     {
       "path": "../statusbar"
