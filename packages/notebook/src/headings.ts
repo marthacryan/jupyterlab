@@ -55,7 +55,8 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     if (!cell) {
       return;
     }
-    if (!this.getCollapsedMetadata(cell) && !cell.isHidden) {
+    let headerInfo = this.getHeaderInfo(cell);
+    if (!headerInfo.collapsed && !cell.isHidden) {
       // no uncollapsing needed.
       return;
     }
@@ -63,7 +64,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
       // recursively uncollapse this cell's parent then.
       this.uncollapseParent(nearestParentLoc);
     }
-    if (this.getCollapsedMetadata(cell)) {
+    if (headerInfo.collapsed) {
       // then uncollapse.
       this.setCellCollapse(nearestParentLoc, false);
     }
@@ -316,7 +317,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
         continue;
       }
 
-      if (this.getCollapsedMetadata(subCell) && subCellHeaderInfo.isHeader) {
+      if (this.getHeaderInfo(subCell).collapsed && subCellHeaderInfo.isHeader) {
         localCollapsed = true;
         localCollapsedLevel = subCellHeaderInfo.headerLevel;
         // but don't collapse the locally collapsed header, so continue to
@@ -334,9 +335,10 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     ) {
       return;
     }
-    if (this.getHeaderInfo(this.nbTrack.activeCell).isHeader) {
+    let headerInfo = this.getHeaderInfo(this.nbTrack.activeCell);
+    if (headerInfo.isHeader) {
       // Then toggle!
-      let collapsing = !this.getCollapsedMetadata(this.nbTrack.activeCell);
+      let collapsing = !headerInfo.collapsed;
       this.setCellCollapse(
         this.nbTrack.currentWidget.content.activeCellIndex,
         collapsing
@@ -352,9 +354,9 @@ export class HeadingsCollapser implements IHeadingsCollapser {
       }
       this.setCellCollapse(
         parentLoc,
-        !this.getCollapsedMetadata(
+        !this.getHeaderInfo(
           this.nbTrack.currentWidget.content.widgets[parentLoc]
-        )
+        ).collapsed
       );
       // otherwise the active cell will still be the now (usually) hidden cell
       this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
@@ -372,8 +374,9 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     ) {
       return;
     }
-    if (this.getHeaderInfo(this.nbTrack.activeCell).isHeader) {
-      if (this.getCollapsedMetadata(this.nbTrack.activeCell)) {
+    let headerInfo = this.getHeaderInfo(this.nbTrack.activeCell);
+    if (headerInfo.isHeader) {
+      if (headerInfo.collapsed) {
         // Then move to nearest parent. Same behavior as the old nb extension.
         // Allows quick collapsing up the chain by <- <- <- presses if <- is a hotkey for this cmd.
         let parentLoc = this.findNearestParentHeader(
@@ -435,22 +438,6 @@ export class HeadingsCollapser implements IHeadingsCollapser {
       this.nbTrack.currentWidget?.content.node,
       this.nbTrack.activeCell.node
     );
-  }
-
-  getCollapsedMetadata(cell: Cell): boolean {
-    let metadata = cell.model.metadata;
-    let collapsedData = false;
-    // handle old metadata.
-    if (metadata.has('Collapsed')) {
-      metadata.set('heading_collapsed', metadata.get('Collapsed'));
-      metadata.delete('Collapsed');
-    }
-    if (metadata.has('heading_collapsed')) {
-      collapsedData = metadata.get('heading_collapsed') === 'true';
-    } else {
-      // default is false, not collapsed.
-    }
-    return collapsedData;
   }
 
   setCollapsed(cell: Cell, data: boolean): any {
@@ -524,7 +511,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     this.nbTrack.activeCell.editor.focus();
   }
 
-  getHeaderInfo(cell: Cell): { isHeader: boolean; headerLevel: number } {
+  getHeaderInfo(cell: Cell): { isHeader: boolean; headerLevel: number; collapsed?: boolean } {
     if (cell == undefined) {
       return { isHeader: false, headerLevel: -1 };
     }
@@ -532,6 +519,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
       return { isHeader: false, headerLevel: 7 };
     }
     let level = cell.headerLevel;
-    return { isHeader: level > 0, headerLevel: level };
+    let collapsed = cell.headerCollapsed;
+    return { isHeader: level > 0, headerLevel: level, collapsed: collapsed };
   }
 }
