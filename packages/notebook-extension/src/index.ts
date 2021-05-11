@@ -700,18 +700,14 @@ function activateHeadingsCollapser(
   const addHeaderBelowCmd:        string = 'Collapsible_Headings:Add_Header_Below'; 
   const uncollapseHeaderCmd:      string = 'Collapsible_Headings:Uncollapse_Header';
   const collapseCmd:              string = 'Collapsible_Headings:Collapse_Header';
-  const handleUpCmd:              string = 'Collapsible_Headings:HandleUp';
-  const handleDownCmd:            string = 'Collapsible_Headings:HandleDown';
 
-  app.commands.addCommand(toggleCollapseCmd, { label: 'Toggle Collapse', execute: () => { headingsCollapser.toggleCurrentCellCollapse(nbTrack); }});
-  app.commands.addCommand(collapseAllCmd, { label: 'Collapse All Cells', execute: () => { headingsCollapser.collapseAll(nbTrack); }});
-  app.commands.addCommand(uncollapseAllCmd, { label: 'Un-Collapse All Cells', execute: () => { headingsCollapser.uncollapseAll(nbTrack); }});
-  app.commands.addCommand(addHeaderAboveCmd, { label: 'Add Header Above', execute: () => { headingsCollapser.addHeaderAbove(nbTrack); } });
-  app.commands.addCommand(addHeaderBelowCmd, { label: 'Add Header Below', execute: () => { headingsCollapser.addHeaderBelow(nbTrack); } });
-  app.commands.addCommand(uncollapseHeaderCmd, { label: 'Un-Collapse Header', execute: () => { headingsCollapser.uncollapseCell(nbTrack); } });
-  app.commands.addCommand(collapseCmd, { label: 'Collapse Header', execute: () => { headingsCollapser.collapseCell(nbTrack); }});
-  app.commands.addCommand(handleUpCmd, { label: 'Handle Up Arrow', execute: () => { headingsCollapser.handleUp(nbTrack); }});
-  app.commands.addCommand(handleDownCmd, { label: 'Handle Down Arrow',  execute: () => { headingsCollapser.handleDown(nbTrack); } });
+  app.commands.addCommand(toggleCollapseCmd, { label: 'Toggle Collapse', execute: () => { headingsCollapser.toggleCurrentCellCollapse(); }});
+  app.commands.addCommand(collapseAllCmd, { label: 'Collapse All Cells', execute: () => { headingsCollapser.collapseAll(); }});
+  app.commands.addCommand(uncollapseAllCmd, { label: 'Un-Collapse All Cells', execute: () => { headingsCollapser.uncollapseAll(); }});
+  app.commands.addCommand(addHeaderAboveCmd, { label: 'Add Header Above', execute: () => { headingsCollapser.addHeaderAbove(); } });
+  app.commands.addCommand(addHeaderBelowCmd, { label: 'Add Header Below', execute: () => { headingsCollapser.addHeaderBelow(); } });
+  app.commands.addCommand(uncollapseHeaderCmd, { label: 'Un-Collapse Header', execute: () => { headingsCollapser.uncollapseCell(); } });
+  app.commands.addCommand(collapseCmd, { label: 'Collapse Header', execute: () => { headingsCollapser.collapseCell(); }});
 
   palette.addItem({command:toggleCollapseCmd, category: 'Collapsible Headings Extension'});
   palette.addItem({command:manuallyUpdateCmd, category: 'Collapsible Headings Extension'});
@@ -722,38 +718,7 @@ function activateHeadingsCollapser(
   palette.addItem({command:addHeaderBelowCmd, category: 'Collapsible Headings Extension'});
   palette.addItem({command:uncollapseHeaderCmd, category: 'Collapsible Headings Extension'});
   palette.addItem({command:collapseCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:handleUpCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:handleDownCmd, category: 'Collapsible Headings Extension'});
 
-  // for some reason if I don't do this with a timeout, setting these bindings seems to fail *sometimes* 
-  // and the arrows invoke these commands
-
-  // I believe these bindings being here just makes them non-optional. 
-  setTimeout(()=>{ app.commands.addKeyBinding({
-    command: handleUpCmd,
-    args: {},
-    keys: ['ArrowUp'],
-    selector: '.jp-Notebook:focus'
-  });}, 2000)
-  setTimeout(()=>{ app.commands.addKeyBinding({
-    command: handleUpCmd,
-    args: {},
-    keys: ['K'],
-    selector: '.jp-Notebook:focus'
-  });}, 2000)
-
-  setTimeout(()=>{ app.commands.addKeyBinding({
-    command: handleDownCmd,
-    args: {},
-    keys: ['ArrowDown'],
-    selector: '.jp-Notebook:focus'
-  });}, 2000);
-  setTimeout(()=>{ app.commands.addKeyBinding({
-    command: handleDownCmd,
-    args: {},
-    keys: ['J'],
-    selector: '.jp-Notebook:focus'
-  });}, 2000);
   return headingsCollapser;
 }
 

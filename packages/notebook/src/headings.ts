@@ -25,7 +25,6 @@ export class HeadingsCollapser implements IHeadingsCollapser {
             }
             cell.toggleCollapsedSignal.connect(
               (cell: MarkdownCell, isCollapsed: boolean) => {
-                console.log("here")
                 this.setCellCollapse(i, isCollapsed);
               }
             );
@@ -45,7 +44,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     }
   }
 
-  uncollapseParent(which: number, ): any {
+  uncollapseParent(which: number): any {
     let nearestParentLoc = this.findNearestParentHeader(which);
     if (nearestParentLoc == -1) {
       // no parent, can't be collapsed so nothing to do.
@@ -67,68 +66,6 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     if (headerInfo.collapsed) {
       // then uncollapse.
       this.setCellCollapse(nearestParentLoc, false);
-    }
-  }
-
-  handleUp(): any {
-    if (
-      this.nbTrack.currentWidget?.content?.activeCellIndex === undefined ||
-      this.nbTrack.currentWidget?.content.activeCellIndex == 0
-    ) {
-      return;
-    }
-    this.nbTrack.currentWidget?.content.deselectAll();
-    let newIndex = (this.nbTrack.currentWidget?.content?.activeCellIndex ?? 0) - 1;
-    let newPotentialActiveCell =
-      this.nbTrack.currentWidget?.content.widgets[newIndex];
-    let isHidden = newPotentialActiveCell?.isHidden;
-    if (isHidden) {
-      let parentLoc = this.findNearestUncollapsedUpwards(newIndex);
-      if (parentLoc == -1) {
-        // no parent, can't be collapsed so nothing to do.
-        return;
-      }
-      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
-    } else {
-      // normal operation.
-      this.nbTrack.currentWidget.content.activeCellIndex -= 1;
-    }
-    if (this.nbTrack.activeCell) {
-      ElementExt.scrollIntoViewIfNeeded(
-        this.nbTrack.currentWidget?.content.node,
-        this.nbTrack.activeCell.node
-      );
-    }
-  }
-
-  handleDown(): any {
-    this.nbTrack.currentWidget?.content.deselectAll();
-    if (this.nbTrack.currentWidget?.content.activeCellIndex === undefined) {
-      return;
-    }
-    let newIndex = this.nbTrack.currentWidget?.content.activeCellIndex + 1;
-    if (newIndex >= this.nbTrack.currentWidget?.content.widgets.length) {
-      return;
-    }
-    let newPotentialActiveCell =
-      this.nbTrack.currentWidget?.content.widgets[newIndex];
-    let isHidden = newPotentialActiveCell.isHidden;
-    if (isHidden) {
-      let parentLoc = this.findNearestUncollapsedDownwards(newIndex);
-      if (parentLoc == -1) {
-        // no parent, can't be collapsed so nothing to do.
-        return;
-      }
-      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
-    } else {
-      // normal operation.
-      this.nbTrack.currentWidget.content.activeCellIndex += 1;
-    }
-    if (this.nbTrack.activeCell) {
-      ElementExt.scrollIntoViewIfNeeded(
-        this.nbTrack.currentWidget?.content.node,
-        this.nbTrack.activeCell.node
-      );
     }
   }
 
