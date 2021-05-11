@@ -6,46 +6,52 @@ import { ElementExt } from '@lumino/domutils';
 import { IHeadingsCollapser, INotebookTracker } from './tokens';
 
 export class HeadingsCollapser implements IHeadingsCollapser {
+  nbTrack: INotebookTracker;
+
   constructor(nbTrack: INotebookTracker) {
+    this.nbTrack = nbTrack;
     nbTrack.currentChanged.connect(() => {
-      nbTrack.currentWidget?.content.model?.stateChanged.connect(() => {
-        if (nbTrack.currentWidget?.content?.widgets?.length !== undefined) {
-          nbTrack.currentWidget.content.widgets.forEach(
-            (cell: Cell, i: number) => {
-              if (cell instanceof MarkdownCell) {
-                cell.toggleCollapsedSignal.connect(
-                  (cell: MarkdownCell, isCollapsed: boolean) => {
-                    this.setCellCollapse(nbTrack, i, isCollapsed);
-                  }
-                );
-              }
-            }
-          );
+      // Not sure if this is running too often, but using stateChanged
+      // signal caused the collapse button to not work for new heading cells that
+      // hadn't been saved yet. 
+      nbTrack.currentWidget?.content.model?.contentChanged.connect(() => {
+        if (nbTrack.currentWidget?.content?.widgets?.length === undefined) {
+          return;
         }
+        nbTrack.currentWidget.content.widgets.forEach(
+          (cell: Cell, i: number) => {
+            if (!(cell instanceof MarkdownCell)) {
+              return;
+            }
+            cell.toggleCollapsedSignal.connect(
+              (cell: MarkdownCell, isCollapsed: boolean) => {
+                console.log("here")
+                this.setCellCollapse(i, isCollapsed);
+              }
+            );
+          }
+        );
       });
     });
 
     nbTrack.activeCellChanged.connect(() => {
-      this.handleCellChange(nbTrack);
+      this.handleCellChange();
     });
   }
 
-  handleCellChange(nbTrack: INotebookTracker): any {
-    if (nbTrack.currentWidget?.content.activeCellIndex) {
-      this.uncollapseParent(
-        nbTrack.currentWidget?.content.activeCellIndex,
-        nbTrack
-      );
+  handleCellChange(): any {
+    if (this.nbTrack.currentWidget?.content.activeCellIndex !== undefined) {
+      this.uncollapseParent(this.nbTrack.currentWidget.content.activeCellIndex);
     }
   }
 
-  uncollapseParent(which: number, nbTrack: INotebookTracker): any {
-    let nearestParentLoc = this.findNearestParentHeader(which, nbTrack);
+  uncollapseParent(which: number, ): any {
+    let nearestParentLoc = this.findNearestParentHeader(which);
     if (nearestParentLoc == -1) {
       // no parent, can't be collapsed so nothing to do.
       return;
     }
-    let cell = nbTrack.currentWidget?.content.widgets[nearestParentLoc];
+    let cell = this.nbTrack.currentWidget?.content.widgets[nearestParentLoc];
     if (!cell) {
       return;
     }
@@ -55,91 +61,88 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     }
     if (cell.isHidden) {
       // recursively uncollapse this cell's parent then.
-      this.uncollapseParent(nearestParentLoc, nbTrack);
+      this.uncollapseParent(nearestParentLoc);
     }
     if (this.getCollapsedMetadata(cell)) {
       // then uncollapse.
-      this.setCellCollapse(nbTrack, nearestParentLoc, false);
+      this.setCellCollapse(nearestParentLoc, false);
     }
   }
 
-  handleUp(nbTrack: INotebookTracker): any {
+  handleUp(): any {
     if (
-      nbTrack.currentWidget?.content?.activeCellIndex === undefined ||
-      nbTrack.currentWidget?.content.activeCellIndex == 0
+      this.nbTrack.currentWidget?.content?.activeCellIndex === undefined ||
+      this.nbTrack.currentWidget?.content.activeCellIndex == 0
     ) {
       return;
     }
-    nbTrack.currentWidget?.content.deselectAll();
-    let newIndex = (nbTrack.currentWidget?.content?.activeCellIndex ?? 0) - 1;
+    this.nbTrack.currentWidget?.content.deselectAll();
+    let newIndex = (this.nbTrack.currentWidget?.content?.activeCellIndex ?? 0) - 1;
     let newPotentialActiveCell =
-      nbTrack.currentWidget?.content.widgets[newIndex];
+      this.nbTrack.currentWidget?.content.widgets[newIndex];
     let isHidden = newPotentialActiveCell?.isHidden;
     if (isHidden) {
-      let parentLoc = this.findNearestUncollapsedUpwards(newIndex, nbTrack);
+      let parentLoc = this.findNearestUncollapsedUpwards(newIndex);
       if (parentLoc == -1) {
         // no parent, can't be collapsed so nothing to do.
         return;
       }
-      nbTrack.currentWidget.content.activeCellIndex = parentLoc;
+      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
     } else {
       // normal operation.
-      nbTrack.currentWidget.content.activeCellIndex -= 1;
+      this.nbTrack.currentWidget.content.activeCellIndex -= 1;
     }
-    if (nbTrack.activeCell) {
+    if (this.nbTrack.activeCell) {
       ElementExt.scrollIntoViewIfNeeded(
-        nbTrack.currentWidget?.content.node,
-        nbTrack.activeCell.node
+        this.nbTrack.currentWidget?.content.node,
+        this.nbTrack.activeCell.node
       );
     }
   }
 
-  handleDown(nbTrack: INotebookTracker): any {
-    nbTrack.currentWidget?.content.deselectAll();
-    if (nbTrack.currentWidget?.content.activeCellIndex === undefined) {
+  handleDown(): any {
+    this.nbTrack.currentWidget?.content.deselectAll();
+    if (this.nbTrack.currentWidget?.content.activeCellIndex === undefined) {
       return;
     }
-    let newIndex = nbTrack.currentWidget?.content.activeCellIndex + 1;
-    if (newIndex >= nbTrack.currentWidget?.content.widgets.length) {
+    let newIndex = this.nbTrack.currentWidget?.content.activeCellIndex + 1;
+    if (newIndex >= this.nbTrack.currentWidget?.content.widgets.length) {
       return;
     }
     let newPotentialActiveCell =
-      nbTrack.currentWidget?.content.widgets[newIndex];
+      this.nbTrack.currentWidget?.content.widgets[newIndex];
     let isHidden = newPotentialActiveCell.isHidden;
     if (isHidden) {
-      let parentLoc = this.findNearestUncollapsedDownwards(newIndex, nbTrack);
+      let parentLoc = this.findNearestUncollapsedDownwards(newIndex);
       if (parentLoc == -1) {
         // no parent, can't be collapsed so nothing to do.
         return;
       }
-      nbTrack.currentWidget.content.activeCellIndex = parentLoc;
+      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
     } else {
       // normal operation.
-      nbTrack.currentWidget.content.activeCellIndex += 1;
+      this.nbTrack.currentWidget.content.activeCellIndex += 1;
     }
-    if (nbTrack.activeCell) {
+    if (this.nbTrack.activeCell) {
       ElementExt.scrollIntoViewIfNeeded(
-        nbTrack.currentWidget?.content.node,
-        nbTrack.activeCell.node
+        this.nbTrack.currentWidget?.content.node,
+        this.nbTrack.activeCell.node
       );
     }
   }
 
-  findNearestUncollapsedUpwards(
-    index: number,
-    nbTrack: INotebookTracker
-  ): number {
+  findNearestUncollapsedUpwards(index: number): number {
     // Finds the nearest header above the given cell. If the cell is a header itself, it does not return itself;
     // this can be checked directly by calling functions.
     if (
-      !nbTrack.currentWidget?.content.widgets ||
-      index >= nbTrack.currentWidget?.content.widgets.length
+      !this.nbTrack.currentWidget?.content.widgets ||
+      index >= this.nbTrack.currentWidget?.content.widgets.length
     ) {
       return -1;
     }
     while (index > 0) {
       index -= 1;
-      let cell = nbTrack.currentWidget?.content.widgets[index];
+      let cell = this.nbTrack.currentWidget?.content.widgets[index];
       if (!cell?.isHidden) {
         return index;
       }
@@ -147,22 +150,19 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     return -1; // else no unhidden found above.
   }
 
-  findNearestUncollapsedDownwards(
-    index: number,
-    nbTrack: INotebookTracker
-  ): number {
+  findNearestUncollapsedDownwards(index: number): number {
     // Finds the nearest header above the given cell. If the cell is a header itself, it does not return itself;
     // this can be checked directly by calling functions.
     if (
-      !nbTrack.currentWidget?.content.widgets ||
-      index >= nbTrack.currentWidget?.content.widgets.length ||
+      !this.nbTrack.currentWidget?.content.widgets ||
+      index >= this.nbTrack.currentWidget?.content.widgets.length ||
       index < 0
     ) {
       return -1;
     }
-    while (index < nbTrack.currentWidget?.content.widgets.length - 1) {
+    while (index < this.nbTrack.currentWidget?.content.widgets.length - 1) {
       index += 1;
-      let cell = nbTrack.currentWidget?.content.widgets[index];
+      let cell = this.nbTrack.currentWidget?.content.widgets[index];
       if (!cell?.isHidden) {
         return index;
       }
@@ -170,16 +170,16 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     return -1; // else no unhidden found above.
   }
 
-  collapseAll(nbTrack: INotebookTracker): any {
-    if (nbTrack.currentWidget) {
+  collapseAll(): any {
+    if (this.nbTrack.currentWidget) {
       for (
         let cellI = 0;
-        cellI < nbTrack.currentWidget?.content.widgets.length;
+        cellI < this.nbTrack.currentWidget?.content.widgets.length;
         cellI++
       ) {
-        let cell = nbTrack.currentWidget?.content.widgets[cellI];
+        let cell = this.nbTrack.currentWidget?.content.widgets[cellI];
         if (this.getHeaderInfo(cell).isHeader) {
-          this.setCellCollapse(nbTrack, cellI, true);
+          this.setCellCollapse( cellI, true);
           // setCellCollapse tries to be smart and not change metadata of hidden cells.
           // that's not the desired behavior of this function though, which wants to act
           // as if the user clicked collapse on every level.
@@ -189,16 +189,16 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     }
   }
 
-  uncollapseAll(nbTrack: INotebookTracker): any {
-    if (nbTrack.currentWidget) {
+  uncollapseAll(): any {
+    if (this.nbTrack.currentWidget) {
       for (
         let cellI = 0;
-        cellI < nbTrack.currentWidget?.content.widgets.length;
+        cellI < this.nbTrack.currentWidget?.content.widgets.length;
         cellI++
       ) {
-        let cell = nbTrack.currentWidget?.content.widgets[cellI];
+        let cell = this.nbTrack.currentWidget?.content.widgets[cellI];
         if (this.getHeaderInfo(cell).isHeader) {
-          this.setCellCollapse(nbTrack, cellI, false);
+          this.setCellCollapse(cellI, false);
           // similar to collapseAll.
           this.setCollapsed(cell, false);
         }
@@ -206,48 +206,48 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     }
   }
 
-  findNextParentHeader(index: number, nbTrack: INotebookTracker): any {
+  findNextParentHeader(index: number, ): any {
     if (
-      !nbTrack.currentWidget?.content.widgets ||
-      index >= nbTrack.currentWidget?.content.widgets.length
+      !this.nbTrack.currentWidget?.content.widgets ||
+      index >= this.nbTrack.currentWidget?.content.widgets.length
     ) {
       return -1;
     }
     let childHeaderInfo = this.getHeaderInfo(
-      nbTrack.currentWidget?.content.widgets[index]
+      this.nbTrack.currentWidget?.content.widgets[index]
     );
     for (
       let cellN = index + 1;
-      cellN < nbTrack.currentWidget?.content.widgets.length;
+      cellN < this.nbTrack.currentWidget?.content.widgets.length;
       cellN++
     ) {
       let hInfo = this.getHeaderInfo(
-        nbTrack.currentWidget?.content.widgets[cellN]
+        this.nbTrack.currentWidget?.content.widgets[cellN]
       );
       if (hInfo.isHeader && hInfo.headerLevel <= childHeaderInfo.headerLevel) {
         return cellN;
       }
     }
     // else no parent header found. return the index of the last cell
-    return nbTrack.currentWidget?.content.widgets.length - 1;
+    return this.nbTrack.currentWidget?.content.widgets.length - 1;
   }
 
-  findNearestParentHeader(index: number, nbTrack: INotebookTracker): number {
+  findNearestParentHeader(index: number, ): number {
     // Finds the nearest header above the given cell. If the cell is a header itself, it does not return itself;
     // this can be checked directly by calling functions.
     if (
-      !nbTrack.currentWidget?.content.widgets ||
-      index >= nbTrack.currentWidget?.content.widgets.length
+      !this.nbTrack.currentWidget?.content.widgets ||
+      index >= this.nbTrack.currentWidget?.content.widgets.length
     ) {
       return -1; // strange...
     }
     let childHeaderInfo = this.getHeaderInfo(
-      nbTrack.currentWidget?.content.widgets[index]
+      this.nbTrack.currentWidget?.content.widgets[index]
     );
     for (let cellN = index - 1; cellN >= 0; cellN--) {
-      if (cellN < nbTrack.currentWidget?.content.widgets.length) {
+      if (cellN < this.nbTrack.currentWidget?.content.widgets.length) {
         let hInfo = this.getHeaderInfo(
-          nbTrack.currentWidget?.content.widgets[cellN]
+          this.nbTrack.currentWidget?.content.widgets[cellN]
         );
         if (hInfo.isHeader && hInfo.headerLevel < childHeaderInfo.headerLevel) {
           return cellN;
@@ -259,14 +259,13 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   }
 
   setCellCollapse(
-    nbTrack: INotebookTracker,
     which: number,
     collapsing: boolean
   ): number {
-    if (!nbTrack.currentWidget?.content.widgets.length) {
+    if (!this.nbTrack.currentWidget?.content.widgets.length) {
       return which + 1;
     }
-    let cell = nbTrack.currentWidget?.content.widgets[which];
+    let cell = this.nbTrack.currentWidget?.content.widgets[which];
     if (!cell) {
       return which + 1;
     }
@@ -287,10 +286,10 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     let cellNum = which + 1;
     for (
       cellNum = which + 1;
-      cellNum < nbTrack.currentWidget?.content.widgets.length;
+      cellNum < this.nbTrack.currentWidget?.content.widgets.length;
       cellNum++
     ) {
-      let subCell = nbTrack.currentWidget?.content.widgets[cellNum];
+      let subCell = this.nbTrack.currentWidget?.content.widgets[cellNum];
       let subCellHeaderInfo = this.getHeaderInfo(subCell);
       if (
         subCellHeaderInfo.isHeader &&
@@ -328,121 +327,113 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     return cellNum + 1;
   }
 
-  toggleCurrentCellCollapse(nbTrack: INotebookTracker): any {
+  toggleCurrentCellCollapse(): any {
     if (
-      !nbTrack.activeCell ||
-      nbTrack.currentWidget?.content.activeCellIndex === undefined
+      !this.nbTrack.activeCell ||
+      this.nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
-    if (this.getHeaderInfo(nbTrack.activeCell).isHeader) {
+    if (this.getHeaderInfo(this.nbTrack.activeCell).isHeader) {
       // Then toggle!
-      let collapsing = !this.getCollapsedMetadata(nbTrack.activeCell);
+      let collapsing = !this.getCollapsedMetadata(this.nbTrack.activeCell);
       this.setCellCollapse(
-        nbTrack,
-        nbTrack.currentWidget.content.activeCellIndex,
+        this.nbTrack.currentWidget.content.activeCellIndex,
         collapsing
       );
     } else {
       // then toggle parent!
       let parentLoc = this.findNearestParentHeader(
-        nbTrack.currentWidget.content.activeCellIndex,
-        nbTrack
+        this.nbTrack.currentWidget.content.activeCellIndex
       );
       if (parentLoc == -1) {
         // no parent, can't be collapsed so nothing to do.
         return;
       }
       this.setCellCollapse(
-        nbTrack,
         parentLoc,
         !this.getCollapsedMetadata(
-          nbTrack.currentWidget.content.widgets[parentLoc]
+          this.nbTrack.currentWidget.content.widgets[parentLoc]
         )
       );
       // otherwise the active cell will still be the now (usually) hidden cell
-      nbTrack.currentWidget.content.activeCellIndex = parentLoc;
+      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
     }
     ElementExt.scrollIntoViewIfNeeded(
-      nbTrack.currentWidget?.content.node,
-      nbTrack.activeCell.node
+      this.nbTrack.currentWidget?.content.node,
+      this.nbTrack.activeCell.node
     );
   }
 
-  collapseCell(nbTrack: INotebookTracker): any {
+  collapseCell(): any {
     if (
-      !nbTrack.activeCell ||
-      nbTrack.currentWidget?.content.activeCellIndex === undefined
+      !this.nbTrack.activeCell ||
+      this.nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
-    if (this.getHeaderInfo(nbTrack.activeCell).isHeader) {
-      if (this.getCollapsedMetadata(nbTrack.activeCell)) {
+    if (this.getHeaderInfo(this.nbTrack.activeCell).isHeader) {
+      if (this.getCollapsedMetadata(this.nbTrack.activeCell)) {
         // Then move to nearest parent. Same behavior as the old nb extension.
         // Allows quick collapsing up the chain by <- <- <- presses if <- is a hotkey for this cmd.
         let parentLoc = this.findNearestParentHeader(
-          nbTrack.currentWidget?.content.activeCellIndex,
-          nbTrack
+          this.nbTrack.currentWidget?.content.activeCellIndex
         );
         if (parentLoc == -1) {
           // no parent, stop going up the chain.
           return;
         }
-        nbTrack.currentWidget.content.activeCellIndex = parentLoc;
+        this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
       } else {
         // Then Collapse!
         this.setCellCollapse(
-          nbTrack,
-          nbTrack.currentWidget?.content.activeCellIndex,
+          this.nbTrack.currentWidget?.content.activeCellIndex,
           true
         );
       }
     } else {
       // then jump to previous parent.
       let parentLoc = this.findNearestParentHeader(
-        nbTrack.currentWidget?.content.activeCellIndex,
-        nbTrack
+        this.nbTrack.currentWidget?.content.activeCellIndex
       );
       if (parentLoc == -1) {
         // no parent, can't be collapsed so nothing to do.
         return;
       }
-      nbTrack.currentWidget.content.activeCellIndex = parentLoc;
+      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
     }
     ElementExt.scrollIntoViewIfNeeded(
-      nbTrack.currentWidget?.content.node,
-      nbTrack.activeCell.node
+      this.nbTrack.currentWidget?.content.node,
+      this.nbTrack.activeCell.node
     );
   }
 
-  uncollapseCell(nbTrack: INotebookTracker): any {
+  uncollapseCell(): any {
     if (
-      !nbTrack.activeCell ||
-      nbTrack.currentWidget?.content.activeCellIndex === undefined
+      !this.nbTrack.activeCell ||
+      this.nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
-    if (this.getHeaderInfo(nbTrack.activeCell).isHeader) {
+    if (this.getHeaderInfo(this.nbTrack.activeCell).isHeader) {
       // Then uncollapse!
       this.setCellCollapse(
-        nbTrack,
-        nbTrack.currentWidget.content.activeCellIndex,
+        this.nbTrack.currentWidget.content.activeCellIndex,
         false
       );
     } else {
       // then jump to next parent
       let parentLoc = this.findNextParentHeader(
-        nbTrack.currentWidget.content.activeCellIndex,
-        nbTrack
+        this.nbTrack.currentWidget.content.activeCellIndex
       );
       if (parentLoc == -1) {
         return;
       }
-      nbTrack.currentWidget.content.activeCellIndex = parentLoc;
+      this.nbTrack.currentWidget.content.activeCellIndex = parentLoc;
     }
     ElementExt.scrollIntoViewIfNeeded(
-      nbTrack.currentWidget?.content.node,
-      nbTrack.activeCell.node
+      this.nbTrack.currentWidget?.content.node,
+      this.nbTrack.activeCell.node
     );
   }
 
@@ -470,70 +461,67 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     }
   }
 
-  addHeaderBelow(nbTrack: INotebookTracker): any {
+  addHeaderBelow(): any {
     if (
-      !nbTrack.activeCell ||
-      nbTrack.currentWidget?.content.activeCellIndex === undefined
+      !this.nbTrack.activeCell ||
+      this.nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
-    let headerInfo = this.getHeaderInfo(nbTrack.activeCell);
+    let headerInfo = this.getHeaderInfo(this.nbTrack.activeCell);
     if (!headerInfo.isHeader) {
       let parentHeaderIndex = this.findNearestParentHeader(
-        nbTrack.currentWidget?.content.activeCellIndex,
-        nbTrack
+        this.nbTrack.currentWidget?.content.activeCellIndex
       );
       headerInfo = this.getHeaderInfo(
-        nbTrack.currentWidget?.content.widgets[parentHeaderIndex]
+        this.nbTrack.currentWidget?.content.widgets[parentHeaderIndex]
       );
     }
     let res = this.findNextParentHeader(
-      nbTrack.currentWidget?.content.activeCellIndex,
-      nbTrack
+      this.nbTrack.currentWidget?.content.activeCellIndex
     );
-    nbTrack.currentWidget.content.activeCellIndex = res;
-    NotebookActions.insertAbove(nbTrack.currentWidget?.content);
+    this.nbTrack.currentWidget.content.activeCellIndex = res;
+    NotebookActions.insertAbove(this.nbTrack.currentWidget?.content);
     NotebookActions.setMarkdownHeader(
-      nbTrack.currentWidget?.content,
+      this.nbTrack.currentWidget?.content,
       headerInfo.headerLevel
     );
-    NotebookActions.changeCellType(nbTrack.currentWidget?.content, 'markdown');
-    nbTrack.activeCell.editor.setSelection({
+    NotebookActions.changeCellType(this.nbTrack.currentWidget?.content, 'markdown');
+    this.nbTrack.activeCell.editor.setSelection({
       start: { line: 0, column: headerInfo.headerLevel + 1 },
       end: { line: 0, column: 10 }
     });
-    nbTrack.activeCell.editor.focus();
+    this.nbTrack.activeCell.editor.focus();
   }
 
-  addHeaderAbove(nbTrack: INotebookTracker): any {
+  addHeaderAbove(): any {
     if (
-      !nbTrack.activeCell ||
-      nbTrack.currentWidget?.content.activeCellIndex === undefined ||
-      !nbTrack.currentWidget?.content.widgets
+      !this.nbTrack.activeCell ||
+      this.nbTrack.currentWidget?.content.activeCellIndex === undefined ||
+      !this.nbTrack.currentWidget?.content.widgets
     ) {
       return;
     }
-    let headerInfo = this.getHeaderInfo(nbTrack.activeCell);
+    let headerInfo = this.getHeaderInfo(this.nbTrack.activeCell);
     if (!headerInfo.isHeader) {
       let res = this.findNearestParentHeader(
-        nbTrack.currentWidget?.content.activeCellIndex,
-        nbTrack
+        this.nbTrack.currentWidget?.content.activeCellIndex
       );
       headerInfo = this.getHeaderInfo(
-        nbTrack.currentWidget?.content.widgets[res]
+        this.nbTrack.currentWidget?.content.widgets[res]
       );
     }
-    NotebookActions.insertAbove(nbTrack.currentWidget?.content);
+    NotebookActions.insertAbove(this.nbTrack.currentWidget?.content);
     NotebookActions.setMarkdownHeader(
-      nbTrack.currentWidget?.content,
+      this.nbTrack.currentWidget?.content,
       headerInfo.headerLevel
     );
-    NotebookActions.changeCellType(nbTrack.currentWidget?.content, 'markdown');
-    nbTrack.activeCell.editor.setSelection({
+    NotebookActions.changeCellType(this.nbTrack.currentWidget?.content, 'markdown');
+    this.nbTrack.activeCell.editor.setSelection({
       start: { line: 0, column: headerInfo.headerLevel + 1 },
       end: { line: 0, column: 10 }
     });
-    nbTrack.activeCell.editor.focus();
+    this.nbTrack.activeCell.editor.focus();
   }
 
   getHeaderInfo(cell: Cell): { isHeader: boolean; headerLevel: number } {
