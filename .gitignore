@@ -111,5 +111,3 @@ junit.xml
 *.code-workspace
 .history
 .vscode
-
-*.ipynb_checkpoints*
