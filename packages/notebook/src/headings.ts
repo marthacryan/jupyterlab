@@ -9,10 +9,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   constructor(nbTrack: INotebookTracker) {
     nbTrack.currentChanged.connect(() => {
       nbTrack.currentWidget?.content.model?.stateChanged.connect(() => {
-        if (
-          nbTrack.currentWidget?.content?.widgets?.length &&
-          nbTrack.currentWidget?.content?.widgets?.length > 1
-        ) {
+        if (nbTrack.currentWidget?.content?.widgets?.length !== undefined) {
           nbTrack.currentWidget.content.widgets.forEach(
             (cell: Cell, i: number) => {
               if (cell instanceof MarkdownCell) {
@@ -68,7 +65,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
 
   handleUp(nbTrack: INotebookTracker): any {
     if (
-      !nbTrack.currentWidget?.content ||
+      nbTrack.currentWidget?.content?.activeCellIndex === undefined ||
       nbTrack.currentWidget?.content.activeCellIndex == 0
     ) {
       return;
@@ -99,7 +96,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
 
   handleDown(nbTrack: INotebookTracker): any {
     nbTrack.currentWidget?.content.deselectAll();
-    if (!nbTrack.currentWidget?.content.activeCellIndex) {
+    if (nbTrack.currentWidget?.content.activeCellIndex === undefined) {
       return;
     }
     let newIndex = nbTrack.currentWidget?.content.activeCellIndex + 1;
@@ -186,7 +183,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
           // setCellCollapse tries to be smart and not change metadata of hidden cells.
           // that's not the desired behavior of this function though, which wants to act
           // as if the user clicked collapse on every level.
-          this.setCollapsedMetadata(cell, true);
+          this.setCollapsed(cell, true);
         }
       }
     }
@@ -203,7 +200,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
         if (this.getHeaderInfo(cell).isHeader) {
           this.setCellCollapse(nbTrack, cellI, false);
           // similar to collapseAll.
-          this.setCollapsedMetadata(cell, false);
+          this.setCollapsed(cell, false);
         }
       }
     }
@@ -261,14 +258,6 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     return -1;
   }
 
-  removeButton(cell: Cell): any {
-    if (cell.promptNode.getElementsByClassName('ch-button').length != 0) {
-      cell.promptNode.removeChild(
-        cell.promptNode.getElementsByClassName('ch-button')[0]
-      );
-    }
-  }
-
   setCellCollapse(
     nbTrack: INotebookTracker,
     which: number,
@@ -291,7 +280,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
       // cause some funny looking bugs.
       return which + 1;
     }
-    this.setCollapsedMetadata(cell, collapsing);
+    this.setCollapsed(cell, collapsing);
     let localCollapsed = false;
     let localCollapsedLevel = 0;
     // iterate through all cells after the active cell.
@@ -342,7 +331,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   toggleCurrentCellCollapse(nbTrack: INotebookTracker): any {
     if (
       !nbTrack.activeCell ||
-      !nbTrack.currentWidget?.content.activeCellIndex
+      nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
@@ -383,7 +372,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   collapseCell(nbTrack: INotebookTracker): any {
     if (
       !nbTrack.activeCell ||
-      !nbTrack.currentWidget?.content.activeCellIndex
+      nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
@@ -429,7 +418,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   uncollapseCell(nbTrack: INotebookTracker): any {
     if (
       !nbTrack.activeCell ||
-      !nbTrack.currentWidget?.content.activeCellIndex
+      nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
@@ -473,7 +462,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
     return collapsedData;
   }
 
-  setCollapsedMetadata(cell: Cell, data: boolean): any {
+  setCollapsed(cell: Cell, data: boolean): any {
     if (cell instanceof MarkdownCell) {
       cell.headerCollapsed = data;
     } else {
@@ -484,7 +473,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   addHeaderBelow(nbTrack: INotebookTracker): any {
     if (
       !nbTrack.activeCell ||
-      !nbTrack.currentWidget?.content.activeCellIndex
+      nbTrack.currentWidget?.content.activeCellIndex === undefined
     ) {
       return;
     }
@@ -519,7 +508,7 @@ export class HeadingsCollapser implements IHeadingsCollapser {
   addHeaderAbove(nbTrack: INotebookTracker): any {
     if (
       !nbTrack.activeCell ||
-      !nbTrack.currentWidget?.content.activeCellIndex ||
+      nbTrack.currentWidget?.content.activeCellIndex === undefined ||
       !nbTrack.currentWidget?.content.widgets
     ) {
       return;
