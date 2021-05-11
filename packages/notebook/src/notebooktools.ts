@@ -14,7 +14,7 @@ import { h, VirtualDOM, VirtualNode } from '@lumino/virtualdom';
 
 import { PanelLayout, Widget } from '@lumino/widgets';
 
-import { Collapse, ICommandPalette, Styling } from '@jupyterlab/apputils';
+import { Collapse, Styling } from '@jupyterlab/apputils';
 
 import { Cell, ICellModel } from '@jupyterlab/cells';
 
@@ -37,8 +37,6 @@ import {
 import { NotebookPanel } from './panel';
 import { INotebookModel } from './model';
 import { INotebookTools, INotebookTracker } from './tokens';
-import { JupyterFrontEnd } from '@jupyterlab/application';
-import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 class RankedPanel<T extends Widget = Widget> extends Widget {
   constructor() {
@@ -519,43 +517,6 @@ export namespace NotebookTools {
 
     private _model = new CodeEditor.Model();
     private _cellModel: CodeEditor.IModel | null;
-  }
-
-  /**
-   * A raw metadata editor.
-   */
-  export class CellCollapserTool extends Tool {
-    /**
-     * Construct a new raw metadata tool.
-     */
-    constructor(options: CellCollapserTool.IOptions) {
-      super();
-      this.addClass('jp-CellCollapserTool');
-      const layout = (this.layout = new PanelLayout());
-      const titleNode = new Widget({ node: document.createElement('label') });
-      titleNode.node.textContent = options.label || 'Toggle cell open/close';
-      let toggle = new Widget({ node: document.createElement('input') });
-      toggle.node.setAttribute('type', 'checkbox');
-      layout.addWidget(titleNode);
-      layout.addWidget(toggle);
-      console.log(layout);
-    }
-  }
-
-  /**
-   * The namespace for `MetadataEditorTool` static data.
-   */
-  export namespace CellCollapserTool {
-    /**
-     * The options used to initialize a metadata editor tool.
-     */
-    export interface IOptions {
-      app: JupyterFrontEnd;
-      settings: ISettingRegistry;
-      palette: ICommandPalette;
-      nbTrack: INotebookTracker;
-      label?: string;
-    }
   }
 
   /**
