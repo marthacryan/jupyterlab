@@ -1421,7 +1421,33 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   }
 
   /**
-   * Indicates header level of cell
+   * Text that represents the header if cell is a header.
+   * Returns empty string if not a header. 
+   * Note: want to update logic to re-use this in calculating
+   * header level. 
+   */
+  get headerText(): string {
+    let text = this.model.value.text;
+    const lines = text.split('\n');
+    const line = lines[0];
+    const line2 = lines.length > 1 ? lines[1] : undefined;
+    
+    let match = line.match(/^([#]{1,6}) (.*)/);
+    let match2 = line2 && line2.match(/^([=]{2,}|[-]{2,})/);
+    let match3 = line.match(/<h([1-6])(.*)>(.*)<\/h\1>/i);
+    if (match) {
+      return match[2];
+    } else if (match2) {
+      return line;
+    } else if (match3) {
+      return match3[3]
+    }
+    return '';
+  }
+
+  /**
+   * Indicates header level of cell.
+   * Returns -1 if not a header. 
    */
   get headerLevel(): number {
     let text = this.model.value.text;
