@@ -23,7 +23,7 @@ import * as nbformat from '@jupyterlab/nbformat';
 
 import { KernelMessage } from '@jupyterlab/services';
 
-import { ArrayExt, each, toArray } from '@lumino/algorithm';
+import { ArrayExt, each, findIndex, toArray } from '@lumino/algorithm';
 
 import { JSONObject, JSONExt } from '@lumino/coreutils';
 
@@ -1385,12 +1385,7 @@ export namespace NotebookActions {
    * @param notebook - The target notebook widget.
    */
   export function collapseAll(notebook: Notebook): any {
-    for (
-      let cellI = 0;
-      cellI < notebook.widgets.length;
-      cellI++
-    ) {
-      let cell = notebook.widgets[cellI];
+    for (const cell of notebook.widgets) {
       if (NotebookActions.getHeaderInfo(cell).isHeader) {
         NotebookActions.setCellCollapse(cell, true, notebook);
         // setCellCollapse tries to be smart and not change metadata of hidden cells.
@@ -1407,12 +1402,7 @@ export namespace NotebookActions {
    * @param notebook - The target notebook widget.
    */
   export function uncollapseAll(notebook: Notebook): any {
-    for (
-      let cellI = 0;
-      cellI < notebook.widgets.length;
-      cellI++
-    ) {
-      let cell = notebook.widgets[cellI];
+    for (const cell of notebook.widgets) {
       if (NotebookActions.getHeaderInfo(cell).isHeader) {
         NotebookActions.setCellCollapse(cell, false, notebook);
         // similar to collapseAll.
@@ -1469,27 +1459,24 @@ export namespace NotebookActions {
     let childHeaderInfo = NotebookActions.getHeaderInfo(
       notebook.widgets[index]
     );
-    for (let cellN = index - 1; cellN >= 0; cellN--) {
-      if (cellN < notebook.widgets.length) {
-        let hInfo = NotebookActions.getHeaderInfo(
-          notebook.widgets[cellN]
-        );
-        if (hInfo.isHeader && hInfo.headerLevel < childHeaderInfo.headerLevel) {
-          return cellN;
-        }
+    let cellN = Math.min(notebook.widgets.length, index - 1);
+    while (cellN >= 0) {
+      let hInfo = NotebookActions.getHeaderInfo(notebook.widgets[cellN]);
+      if (hInfo.isHeader && hInfo.headerLevel < childHeaderInfo.headerLevel) {
+        return cellN;
       }
+      cellN -= 1;
     }
     // else no parent header found.
     return -1;
   }
 
   export function getCellIndex(cell: Cell, notebook: Notebook): number {
-    for (let i = 0; i < notebook.widgets.length; i++) {
-      if (cell.model.id === notebook.widgets[i].model.id) {
-        return i;
+    return findIndex(notebook.widgets,
+      (possibleCell: Cell, index: number) => {
+        return (cell.model.id === possibleCell.model.id);
       }
-    }
-    return -1;
+    )
   }
 
   /**
@@ -1579,10 +1566,9 @@ export namespace NotebookActions {
     let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
     if (headerInfo.isHeader) {
       // Then toggle!
-      let collapsing = !headerInfo.collapsed;
       NotebookActions.setCellCollapse(
         notebook.activeCell,
-        collapsing,
+        !headerInfo.collapsed,
         notebook
       );
     } else {
