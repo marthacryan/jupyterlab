@@ -25,7 +25,8 @@ import { MathJaxTypesetter } from '@jupyterlab/mathjax2';
 import {
   NotebookPanel,
   NotebookWidgetFactory,
-  NotebookModelFactory
+  NotebookModelFactory,
+  NotebookTracker
 } from '@jupyterlab/notebook';
 
 import {
@@ -91,6 +92,7 @@ function createApp(manager: ServiceManager.IManager): void {
   const mFactory = new NotebookModelFactory({});
   const editorFactory = editorServices.factoryService.newInlineEditor;
   const contentFactory = new NotebookPanel.ContentFactory({ editorFactory });
+  const tracker = new NotebookTracker({ namespace: 'notebook-examples' });
 
   const wFactory = new NotebookWidgetFactory({
     name: 'Notebook',
@@ -156,7 +158,7 @@ function createApp(manager: ServiceManager.IManager): void {
     panel.update();
   });
 
-  SetupCommands(commands, palette, nbWidget, handler);
+  SetupCommands(commands, palette, nbWidget, handler, tracker);
 
   console.debug('Example started!');
 }

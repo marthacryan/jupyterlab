@@ -4,7 +4,7 @@
 import { CommandRegistry } from '@lumino/commands';
 import { sessionContextDialogs } from '@jupyterlab/apputils';
 import { CompletionHandler } from '@jupyterlab/completer';
-import { NotebookPanel, NotebookActions } from '@jupyterlab/notebook';
+import { NotebookPanel, NotebookActions, NotebookTracker } from '@jupyterlab/notebook';
 import {
   SearchInstance,
   NotebookSearchProvider
@@ -56,7 +56,8 @@ export const SetupCommands = (
   commands: CommandRegistry,
   palette: CommandPalette,
   nbWidget: NotebookPanel,
-  handler: CompletionHandler
+  handler: CompletionHandler,
+  tracker: NotebookTracker
 ) => {
   // Add commands.
   commands.addCommand(cmdIds.invoke, {
@@ -217,37 +218,60 @@ export const SetupCommands = (
   });
   commands.addCommand(cmdIds.toggleCollapseCmd, {
     label: 'Toggle Collapse',
-    execute: () => { NotebookActions.toggleCurrentCellCollapse();
+    execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.toggleCurrentCellCollapse(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(cmdIds.collapseAllCmd, {
     label: 'Collapse All Cells',
-    execute: () => { NotebookActions.collapseAll();
+    execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.collapseAll(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(cmdIds.uncollapseAllCmd, {
     label: 'Un-Collapse All Cells', execute: () => {
-      NotebookActions.uncollapseAll();
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.uncollapseAll(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(cmdIds.addHeaderAboveCmd, {
     label: 'Add Header Above', execute: () => {
-      NotebookActions.addHeaderAbove();
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.addHeaderAbove(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(cmdIds.addHeaderBelowCmd, {
     label: 'Add Header Below', execute: () => {
-      NotebookActions.addHeaderBelow();
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.addHeaderBelow(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(cmdIds.uncollapseHeaderCmd, {
     label: 'Un-Collapse Header', execute: () => {
-      NotebookActions.uncollapseCell();
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.uncollapseCell(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(cmdIds.collapseCmd, {
     label: 'Collapse Header', execute: () => {
-      NotebookActions.collapseCell();
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.collapseCell(tracker.currentWidget?.content);
     }
   });
 
