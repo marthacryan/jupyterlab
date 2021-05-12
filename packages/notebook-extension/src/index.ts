@@ -21,7 +21,7 @@ import {
   sessionContextDialogs
 } from '@jupyterlab/apputils';
 
-import { Cell, CodeCell, MarkdownCell } from '@jupyterlab/cells';
+import { CodeCell, ICellModel, MarkdownCell } from '@jupyterlab/cells';
 
 import { IEditorServices } from '@jupyterlab/codeeditor';
 
@@ -59,6 +59,7 @@ import {
   CommandEditStatus,
   NotebookTrustStatus
 } from '@jupyterlab/notebook';
+import { IObservableList, IObservableUndoableList } from '@jupyterlab/observables';
 
 import { IPropertyInspectorProvider } from '@jupyterlab/property-inspector';
 
@@ -1352,27 +1353,28 @@ function addCommands(
     return Private.isEnabledAndSingleSelected(shell, tracker);
   };
 
-  tracker.currentChanged.connect(() => {
+  tracker.currentChanged.connect((sender: INotebookTracker, panel: NotebookPanel) => {
+
     // Not sure if this is running too often, but using stateChanged
     // signal caused the collapse button to not work for new heading cells that
     // hadn't been saved yet. 
-    tracker.currentWidget?.content.model?.contentChanged.connect(() => {
-      if (tracker.currentWidget?.content?.widgets?.length === undefined) {
-        return;
-      }
-      tracker.currentWidget.content.widgets.forEach(
-        (cell: Cell, i: number) => {
-          if (!(cell instanceof MarkdownCell)) {
-            return;
+    panel.content.model?.cells.changed.connect(
+      (
+        list: IObservableUndoableList<ICellModel>,
+        args: IObservableList.IChangedArgs<ICellModel>
+      ) => {
+        if (args.type === 'add') {
+          const cell = panel.content.widgets[args.newIndex];
+          if (cell instanceof MarkdownCell) {
+            cell.toggleCollapsedSignal.connect(
+              (newCell: MarkdownCell, collapsing: boolean) => {
+                NotebookActions.setCellCollapse(newCell, collapsing, panel.content);
+              }
+            )
           }
-          cell.toggleCollapsedSignal.connect(
-            (cell: MarkdownCell, isCollapsed: boolean) => {
-              this.setCellCollapse(i, isCollapsed);
-            }
-          );
         }
-      );
-    });
+      }
+    );
   });
 
   commands.addCommand(CommandIDs.runAndAdvance, {
@@ -2276,7 +2278,18 @@ function populatePalette(
     CommandIDs.reconnectToKernel,
     CommandIDs.createConsole,
     CommandIDs.closeAndShutdown,
-    CommandIDs.trust
+    CommandIDs.trust,
+    CommandIDs.toggleCollapseCmd,
+    CommandIDs.manuallyUpdateCmd,
+    CommandIDs.manuallyUpdateStateCmd,
+    CommandIDs.collapseAllCmd,
+    CommandIDs.uncollapseAllCmd,
+    CommandIDs.addHeaderAboveCmd,
+    CommandIDs.addHeaderBelowCmd,
+    CommandIDs.uncollapseHeaderCmd,
+    CommandIDs.collapseCmd,
+    CommandIDs.handleUpCmd,
+    CommandIDs.handleDownCmd
   ].forEach(command => {
     palette.addItem({ command, category });
   });

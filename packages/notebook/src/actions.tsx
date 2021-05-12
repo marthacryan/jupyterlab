@@ -1379,6 +1379,11 @@ export namespace NotebookActions {
     Private.handleState(notebook, state);
   }
 
+  /**
+   * Collapse all cells in given notebook.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function collapseAll(notebook: Notebook): any {
     for (
       let cellI = 0;
@@ -1387,7 +1392,7 @@ export namespace NotebookActions {
     ) {
       let cell = notebook.widgets[cellI];
       if (NotebookActions.getHeaderInfo(cell).isHeader) {
-        NotebookActions.setCellCollapse(cellI, true, notebook);
+        NotebookActions.setCellCollapse(cell, true, notebook);
         // setCellCollapse tries to be smart and not change metadata of hidden cells.
         // that's not the desired behavior of this function though, which wants to act
         // as if the user clicked collapse on every level.
@@ -1396,6 +1401,11 @@ export namespace NotebookActions {
     }
   }
 
+  /**
+   * Un-collapse all cells in given notebook.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function uncollapseAll(notebook: Notebook): any {
     for (
       let cellI = 0;
@@ -1404,13 +1414,18 @@ export namespace NotebookActions {
     ) {
       let cell = notebook.widgets[cellI];
       if (NotebookActions.getHeaderInfo(cell).isHeader) {
-        NotebookActions.setCellCollapse(cellI, false, notebook);
+        NotebookActions.setCellCollapse(cell, false, notebook);
         // similar to collapseAll.
         NotebookActions.setCollapsed(cell, false);
       }
     }
   }
 
+  /**
+   * Find the parent header of the active cell
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function findNextParentHeader(index: number, notebook: Notebook): any {
     if (
       !notebook.widgets ||
@@ -1437,6 +1452,11 @@ export namespace NotebookActions {
     return notebook.widgets.length - 1;
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function findNearestParentHeader(index: number, notebook: Notebook): number {
     // Finds the nearest header above the given cell. If the cell is a header itself, it does not return itself;
     // this can be checked directly by calling functions.
@@ -1463,23 +1483,34 @@ export namespace NotebookActions {
     return -1;
   }
 
+  export function getCellIndex(cell: Cell, notebook: Notebook): number {
+    for (let i = 0; i < notebook.widgets.length; i++) {
+      if (cell.model.id === notebook.widgets[i].model.id) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function setCellCollapse(
-    which: number,
+    cell: Cell,
     collapsing: boolean,
     notebook: Notebook
   ): number {
-    if (!notebook.widgets.length) {
-      return which + 1;
+    const which = NotebookActions.getCellIndex(cell, notebook);
+    if (which === -1) {
+      return -1;
     }
-    let cell = notebook.widgets[which];
-    if (!cell) {
+    if (!notebook.widgets.length) {
       return which + 1;
     }
     let selectedHeaderInfo = NotebookActions.getHeaderInfo(cell);
     let isMarkdown = cell instanceof MarkdownCell;
-    if (cell == undefined) {
-      return -1;
-    }
     if (cell.isHidden || !isMarkdown || !selectedHeaderInfo.isHeader) {
       // otherwise collapsing and uncollapsing already hidden stuff can
       // cause some funny looking bugs.
@@ -1533,6 +1564,11 @@ export namespace NotebookActions {
     return cellNum + 1;
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function toggleCurrentCellCollapse(notebook: Notebook): any {
     if (
       !notebook.activeCell ||
@@ -1545,7 +1581,7 @@ export namespace NotebookActions {
       // Then toggle!
       let collapsing = !headerInfo.collapsed;
       NotebookActions.setCellCollapse(
-        notebook.activeCellIndex,
+        notebook.activeCell,
         collapsing,
         notebook
       );
@@ -1560,7 +1596,7 @@ export namespace NotebookActions {
         return;
       }
       NotebookActions.setCellCollapse(
-        parentLoc,
+        notebook.widgets[parentLoc],
         !NotebookActions.getHeaderInfo(
           notebook.widgets[parentLoc]
         ).collapsed,
@@ -1575,6 +1611,11 @@ export namespace NotebookActions {
     );
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function collapseCell(notebook: Notebook): any {
     if (
       !notebook.activeCell ||
@@ -1599,7 +1640,7 @@ export namespace NotebookActions {
       } else {
         // Then Collapse!
         NotebookActions.setCellCollapse(
-          notebook.activeCellIndex,
+          notebook.activeCell,
           true,
           notebook
         );
@@ -1622,6 +1663,11 @@ export namespace NotebookActions {
     );
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function uncollapseCell(notebook: Notebook): any {
     if (
       !notebook.activeCell ||
@@ -1632,7 +1678,7 @@ export namespace NotebookActions {
     if (NotebookActions.getHeaderInfo(notebook.activeCell).isHeader) {
       // Then uncollapse!
       NotebookActions.setCellCollapse(
-        notebook.activeCellIndex,
+        notebook.activeCell,
         false,
         notebook
       );
@@ -1653,6 +1699,11 @@ export namespace NotebookActions {
     );
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function setCollapsed(cell: Cell, data: boolean): any {
     if (cell instanceof MarkdownCell) {
       cell.headerCollapsed = data;
@@ -1661,6 +1712,11 @@ export namespace NotebookActions {
     }
   }
 
+  /**
+   * Creates a header below the 
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function addHeaderBelow(notebook: Notebook): any {
     if (
       !notebook.activeCell ||
@@ -1696,6 +1752,11 @@ export namespace NotebookActions {
     notebook.activeCell.editor.focus();
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param notebook - The target notebook widget.
+   */
   export function addHeaderAbove(notebook: Notebook): any {
     if (!notebook.activeCell || notebook.activeCellIndex === undefined) {
       return;
@@ -1723,6 +1784,11 @@ export namespace NotebookActions {
     notebook.activeCell.editor.focus();
   }
 
+  /**
+   * Disable output scrolling for all selected cells.
+   *
+   * @param cell - The target cell widget.
+   */
   export function getHeaderInfo(cell: Cell): { isHeader: boolean; headerLevel: number; collapsed?: boolean } {
     if (cell == undefined) {
       return { isHeader: false, headerLevel: -1 };
