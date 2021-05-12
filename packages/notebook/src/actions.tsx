@@ -1379,6 +1379,362 @@ export namespace NotebookActions {
     Private.handleState(notebook, state);
   }
 
+  export function collapseAll(notebook: Notebook): any {
+    for (
+      let cellI = 0;
+      cellI < notebook.widgets.length;
+      cellI++
+    ) {
+      let cell = notebook.widgets[cellI];
+      if (NotebookActions.getHeaderInfo(cell).isHeader) {
+        NotebookActions.setCellCollapse(cellI, true, notebook);
+        // setCellCollapse tries to be smart and not change metadata of hidden cells.
+        // that's not the desired behavior of this function though, which wants to act
+        // as if the user clicked collapse on every level.
+        NotebookActions.setCollapsed(cell, true);
+      }
+    }
+  }
+
+  export function uncollapseAll(notebook: Notebook): any {
+    for (
+      let cellI = 0;
+      cellI < notebook.widgets.length;
+      cellI++
+    ) {
+      let cell = notebook.widgets[cellI];
+      if (NotebookActions.getHeaderInfo(cell).isHeader) {
+        NotebookActions.setCellCollapse(cellI, false, notebook);
+        // similar to collapseAll.
+        NotebookActions.setCollapsed(cell, false);
+      }
+    }
+  }
+
+  export function findNextParentHeader(index: number, notebook: Notebook): any {
+    if (
+      !notebook.widgets ||
+      index >= notebook.widgets.length
+    ) {
+      return -1;
+    }
+    let childHeaderInfo = NotebookActions.getHeaderInfo(
+      notebook.widgets[index]
+    );
+    for (
+      let cellN = index + 1;
+      cellN < notebook.widgets.length;
+      cellN++
+    ) {
+      let hInfo = NotebookActions.getHeaderInfo(
+        notebook.widgets[cellN]
+      );
+      if (hInfo.isHeader && hInfo.headerLevel <= childHeaderInfo.headerLevel) {
+        return cellN;
+      }
+    }
+    // else no parent header found. return the index of the last cell
+    return notebook.widgets.length - 1;
+  }
+
+  export function findNearestParentHeader(index: number, notebook: Notebook): number {
+    // Finds the nearest header above the given cell. If the cell is a header itself, it does not return itself;
+    // this can be checked directly by calling functions.
+    if (
+      !notebook.widgets ||
+      index >= notebook.widgets.length
+    ) {
+      return -1; // strange...
+    }
+    let childHeaderInfo = NotebookActions.getHeaderInfo(
+      notebook.widgets[index]
+    );
+    for (let cellN = index - 1; cellN >= 0; cellN--) {
+      if (cellN < notebook.widgets.length) {
+        let hInfo = NotebookActions.getHeaderInfo(
+          notebook.widgets[cellN]
+        );
+        if (hInfo.isHeader && hInfo.headerLevel < childHeaderInfo.headerLevel) {
+          return cellN;
+        }
+      }
+    }
+    // else no parent header found.
+    return -1;
+  }
+
+  export function setCellCollapse(
+    which: number,
+    collapsing: boolean,
+    notebook: Notebook
+  ): number {
+    if (!notebook.widgets.length) {
+      return which + 1;
+    }
+    let cell = notebook.widgets[which];
+    if (!cell) {
+      return which + 1;
+    }
+    let selectedHeaderInfo = NotebookActions.getHeaderInfo(cell);
+    let isMarkdown = cell instanceof MarkdownCell;
+    if (cell == undefined) {
+      return -1;
+    }
+    if (cell.isHidden || !isMarkdown || !selectedHeaderInfo.isHeader) {
+      // otherwise collapsing and uncollapsing already hidden stuff can
+      // cause some funny looking bugs.
+      return which + 1;
+    }
+    NotebookActions.setCollapsed(cell, collapsing);
+    let localCollapsed = false;
+    let localCollapsedLevel = 0;
+    // iterate through all cells after the active cell.
+    let cellNum = which + 1;
+    for (
+      cellNum = which + 1;
+      cellNum < notebook.widgets.length;
+      cellNum++
+    ) {
+      let subCell = notebook.widgets[cellNum];
+      let subCellHeaderInfo = NotebookActions.getHeaderInfo(subCell);
+      if (
+        subCellHeaderInfo.isHeader &&
+        subCellHeaderInfo.headerLevel <= selectedHeaderInfo.headerLevel
+      ) {
+        // then reached an equivalent or higher header level than the
+        // original the end of the collapse.
+        cellNum -= 1;
+        break;
+      }
+      if (
+        localCollapsed &&
+        subCellHeaderInfo.isHeader &&
+        subCellHeaderInfo.headerLevel <= localCollapsedLevel
+      ) {
+        // then reached the end of the local collapsed, so unset NotebookActions.
+        localCollapsed = false;
+      }
+
+      if (collapsing || localCollapsed) {
+        // then no extra handling is needed for further locally collapsed
+        // headers.
+        subCell.setHidden(true);
+        continue;
+      }
+
+      if (NotebookActions.getHeaderInfo(subCell).collapsed && subCellHeaderInfo.isHeader) {
+        localCollapsed = true;
+        localCollapsedLevel = subCellHeaderInfo.headerLevel;
+        // but don't collapse the locally collapsed header, so continue to
+        // uncollapse the header. This will get noticed in the next round.
+      }
+      subCell.setHidden(false);
+    }
+    return cellNum + 1;
+  }
+
+  export function toggleCurrentCellCollapse(notebook: Notebook): any {
+    if (
+      !notebook.activeCell ||
+      notebook.activeCellIndex === undefined
+    ) {
+      return;
+    }
+    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
+    if (headerInfo.isHeader) {
+      // Then toggle!
+      let collapsing = !headerInfo.collapsed;
+      NotebookActions.setCellCollapse(
+        notebook.activeCellIndex,
+        collapsing,
+        notebook
+      );
+    } else {
+      // then toggle parent!
+      let parentLoc = NotebookActions.findNearestParentHeader(
+        notebook.activeCellIndex,
+        notebook
+      );
+      if (parentLoc == -1) {
+        // no parent, can't be collapsed so nothing to do.
+        return;
+      }
+      NotebookActions.setCellCollapse(
+        parentLoc,
+        !NotebookActions.getHeaderInfo(
+          notebook.widgets[parentLoc]
+        ).collapsed,
+        notebook
+      );
+      // otherwise the active cell will still be the now (usually) hidden cell
+      notebook.activeCellIndex = parentLoc;
+    }
+    ElementExt.scrollIntoViewIfNeeded(
+      notebook.node,
+      notebook.activeCell.node
+    );
+  }
+
+  export function collapseCell(notebook: Notebook): any {
+    if (
+      !notebook.activeCell ||
+      notebook.activeCellIndex === undefined
+    ) {
+      return;
+    }
+    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
+    if (headerInfo.isHeader) {
+      if (headerInfo.collapsed) {
+        // Then move to nearest parent. Same behavior as the old nb extension.
+        // Allows quick collapsing up the chain by <- <- <- presses if <- is a hotkey for this cmd.
+        let parentLoc = NotebookActions.findNearestParentHeader(
+          notebook.activeCellIndex,
+          notebook
+        );
+        if (parentLoc == -1) {
+          // no parent, stop going up the chain.
+          return;
+        }
+        notebook.activeCellIndex = parentLoc;
+      } else {
+        // Then Collapse!
+        NotebookActions.setCellCollapse(
+          notebook.activeCellIndex,
+          true,
+          notebook
+        );
+      }
+    } else {
+      // then jump to previous parent.
+      let parentLoc = NotebookActions.findNearestParentHeader(
+        notebook.activeCellIndex,
+        notebook
+      );
+      if (parentLoc == -1) {
+        // no parent, can't be collapsed so nothing to do.
+        return;
+      }
+      notebook.activeCellIndex = parentLoc;
+    }
+    ElementExt.scrollIntoViewIfNeeded(
+      notebook.node,
+      notebook.activeCell.node
+    );
+  }
+
+  export function uncollapseCell(notebook: Notebook): any {
+    if (
+      !notebook.activeCell ||
+      notebook.activeCellIndex === undefined
+    ) {
+      return;
+    }
+    if (NotebookActions.getHeaderInfo(notebook.activeCell).isHeader) {
+      // Then uncollapse!
+      NotebookActions.setCellCollapse(
+        notebook.activeCellIndex,
+        false,
+        notebook
+      );
+    } else {
+      // then jump to next parent
+      let parentLoc = NotebookActions.findNextParentHeader(
+        notebook.activeCellIndex,
+        notebook
+      );
+      if (parentLoc == -1) {
+        return;
+      }
+      notebook.activeCellIndex = parentLoc;
+    }
+    ElementExt.scrollIntoViewIfNeeded(
+      notebook.node,
+      notebook.activeCell.node
+    );
+  }
+
+  export function setCollapsed(cell: Cell, data: boolean): any {
+    if (cell instanceof MarkdownCell) {
+      cell.headerCollapsed = data;
+    } else {
+      cell.setHidden(data);
+    }
+  }
+
+  export function addHeaderBelow(notebook: Notebook): any {
+    if (
+      !notebook.activeCell ||
+      notebook.activeCellIndex === undefined
+    ) {
+      return;
+    }
+    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
+    if (!headerInfo.isHeader) {
+      let parentHeaderIndex = NotebookActions.findNearestParentHeader(
+        notebook.activeCellIndex,
+        notebook
+      );
+      headerInfo = NotebookActions.getHeaderInfo(
+        notebook.widgets[parentHeaderIndex]
+      );
+    }
+    let res = NotebookActions.findNextParentHeader(
+      notebook.activeCellIndex,
+      notebook
+    );
+    notebook.activeCellIndex = res;
+    NotebookActions.insertAbove(notebook);
+    NotebookActions.setMarkdownHeader(
+      notebook,
+      headerInfo.headerLevel
+    );
+    NotebookActions.changeCellType(notebook, 'markdown');
+    notebook.activeCell.editor.setSelection({
+      start: { line: 0, column: headerInfo.headerLevel + 1 },
+      end: { line: 0, column: 10 }
+    });
+    notebook.activeCell.editor.focus();
+  }
+
+  export function addHeaderAbove(notebook: Notebook): any {
+    if (!notebook.activeCell || notebook.activeCellIndex === undefined) {
+      return;
+    }
+    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
+    if (!headerInfo.isHeader) {
+      let res = NotebookActions.findNearestParentHeader(
+        notebook.activeCellIndex,
+        notebook
+      );
+      headerInfo = NotebookActions.getHeaderInfo(
+        notebook.widgets[res]
+      );
+    }
+    NotebookActions.insertAbove(notebook);
+    NotebookActions.setMarkdownHeader(
+      notebook,
+      headerInfo.headerLevel
+    );
+    NotebookActions.changeCellType(notebook, 'markdown');
+    notebook.activeCell.editor.setSelection({
+      start: { line: 0, column: headerInfo.headerLevel + 1 },
+      end: { line: 0, column: 10 }
+    });
+    notebook.activeCell.editor.focus();
+  }
+
+  export function getHeaderInfo(cell: Cell): { isHeader: boolean; headerLevel: number; collapsed?: boolean } {
+    if (cell == undefined) {
+      return { isHeader: false, headerLevel: -1 };
+    }
+    if (!(cell instanceof MarkdownCell)) {
+      return { isHeader: false, headerLevel: 7 };
+    }
+    let level = cell.headerLevel;
+    let collapsed = cell.headerCollapsed;
+    return { isHeader: level > 0, headerLevel: level, collapsed: collapsed };
+  }
+
   /**
    * Trust the notebook after prompting the user.
    *

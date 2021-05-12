@@ -21,7 +21,7 @@ import {
   sessionContextDialogs
 } from '@jupyterlab/apputils';
 
-import { CodeCell } from '@jupyterlab/cells';
+import { Cell, CodeCell, MarkdownCell } from '@jupyterlab/cells';
 
 import { IEditorServices } from '@jupyterlab/codeeditor';
 
@@ -57,9 +57,7 @@ import {
   NotebookWidgetFactory,
   StaticNotebook,
   CommandEditStatus,
-  NotebookTrustStatus,
-  HeadingsCollapser,
-  IHeadingsCollapser
+  NotebookTrustStatus
 } from '@jupyterlab/notebook';
 
 import { IPropertyInspectorProvider } from '@jupyterlab/property-inspector';
@@ -242,6 +240,28 @@ namespace CommandIDs {
   export const selectLastRunCell = 'notebook:select-last-run-cell';
 
   export const replaceSelection = 'notebook:replace-selection';
+
+  export const toggleCollapseCmd = 'Collapsible_Headings:Toggle_Collapse';  
+
+  export const manuallyUpdateCmd = 'Collapsible_Headings:Manually_Update_Collapse_Buttons';
+
+  export const manuallyUpdateStateCmd = 'Collapsible_Headings:Manually_Update_Notebook_Collapse_State';
+
+  export const collapseAllCmd = 'Collapsible_Headings:Collapse_All';
+
+  export const uncollapseAllCmd = 'Collapsible_Headings:UnCollapse_All';
+
+  export const addHeaderAboveCmd = 'Collapsible_Headings:Add_Header_Above'; 
+
+  export const addHeaderBelowCmd = 'Collapsible_Headings:Add_Header_Below'; 
+
+  export const uncollapseHeaderCmd = 'Collapsible_Headings:Uncollapse_Header';
+
+  export const collapseCmd = 'Collapsible_Headings:Collapse_Header';
+
+  export const handleUpCmd = 'Collapsible_Headings:HandleUp';
+
+  export const handleDownCmd = 'Collapsible_Headings:HandleDown';
 }
 
 /**
@@ -272,17 +292,6 @@ const trackerPlugin: JupyterFrontEndPlugin<INotebookTracker> = {
     ISessionContextDialogs
   ],
   activate: activateNotebookHandler,
-  autoStart: true
-};
-
-/**
- * The notebook widget tracker provider.
- */
-const headingsCollapserPlugin: JupyterFrontEndPlugin<HeadingsCollapser> = {
-  id: '@jupyterlab/notebook-extension:headings-collapser',
-  provides: IHeadingsCollapser,
-  requires: [INotebookTracker, ICommandPalette, ISettingRegistry],
-  activate: activateHeadingsCollapser,
   autoStart: true
 };
 
@@ -554,7 +563,6 @@ const codeConsolePlugin: JupyterFrontEndPlugin<void> = {
 const plugins: JupyterFrontEndPlugin<any>[] = [
   factory,
   trackerPlugin,
-  headingsCollapserPlugin,
   exportPlugin,
   tools,
   commandEditItem,
@@ -680,46 +688,6 @@ function activateNotebookTools(
   }
 
   return notebookTools;
-}
-
-function activateHeadingsCollapser(
-  app: JupyterFrontEnd,
-  nbTrack: INotebookTracker,
-  palette: ICommandPalette,
-  settings: ISettingRegistry
-): HeadingsCollapser {
-  void settings.load('@jupyterlab/notebook-extension:headings-collapser');
-  const headingsCollapser = new HeadingsCollapser(nbTrack);
-
-  const toggleCollapseCmd:        string = 'Collapsible_Headings:Toggle_Collapse';  
-  const manuallyUpdateCmd:        string = 'Collapsible_Headings:Manually_Update_Collapse_Buttons';
-  const manuallyUpdateStateCmd:   string = 'Collapsible_Headings:Manually_Update_Notebook_Collapse_State';
-  const collapseAllCmd:           string = 'Collapsible_Headings:Collapse_All';
-  const uncollapseAllCmd:         string = 'Collapsible_Headings:UnCollapse_All';
-  const addHeaderAboveCmd:        string = 'Collapsible_Headings:Add_Header_Above'; 
-  const addHeaderBelowCmd:        string = 'Collapsible_Headings:Add_Header_Below'; 
-  const uncollapseHeaderCmd:      string = 'Collapsible_Headings:Uncollapse_Header';
-  const collapseCmd:              string = 'Collapsible_Headings:Collapse_Header';
-
-  app.commands.addCommand(toggleCollapseCmd, { label: 'Toggle Collapse', execute: () => { headingsCollapser.toggleCurrentCellCollapse(); }});
-  app.commands.addCommand(collapseAllCmd, { label: 'Collapse All Cells', execute: () => { headingsCollapser.collapseAll(); }});
-  app.commands.addCommand(uncollapseAllCmd, { label: 'Un-Collapse All Cells', execute: () => { headingsCollapser.uncollapseAll(); }});
-  app.commands.addCommand(addHeaderAboveCmd, { label: 'Add Header Above', execute: () => { headingsCollapser.addHeaderAbove(); } });
-  app.commands.addCommand(addHeaderBelowCmd, { label: 'Add Header Below', execute: () => { headingsCollapser.addHeaderBelow(); } });
-  app.commands.addCommand(uncollapseHeaderCmd, { label: 'Un-Collapse Header', execute: () => { headingsCollapser.uncollapseCell(); } });
-  app.commands.addCommand(collapseCmd, { label: 'Collapse Header', execute: () => { headingsCollapser.collapseCell(); }});
-
-  palette.addItem({command:toggleCollapseCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:manuallyUpdateCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:manuallyUpdateStateCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:collapseAllCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:uncollapseAllCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:addHeaderAboveCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:addHeaderBelowCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:uncollapseHeaderCmd, category: 'Collapsible Headings Extension'});
-  palette.addItem({command:collapseCmd, category: 'Collapsible Headings Extension'});
-
-  return headingsCollapser;
 }
 
 /**
@@ -1383,6 +1351,29 @@ function addCommands(
   const isEnabledAndSingleSelected = (): boolean => {
     return Private.isEnabledAndSingleSelected(shell, tracker);
   };
+
+  tracker.currentChanged.connect(() => {
+    // Not sure if this is running too often, but using stateChanged
+    // signal caused the collapse button to not work for new heading cells that
+    // hadn't been saved yet. 
+    tracker.currentWidget?.content.model?.contentChanged.connect(() => {
+      if (tracker.currentWidget?.content?.widgets?.length === undefined) {
+        return;
+      }
+      tracker.currentWidget.content.widgets.forEach(
+        (cell: Cell, i: number) => {
+          if (!(cell instanceof MarkdownCell)) {
+            return;
+          }
+          cell.toggleCollapsedSignal.connect(
+            (cell: MarkdownCell, isCollapsed: boolean) => {
+              this.setCellCollapse(i, isCollapsed);
+            }
+          );
+        }
+      );
+    });
+  });
 
   commands.addCommand(CommandIDs.runAndAdvance, {
     label: trans.__('Run Selected Cells'),
@@ -2194,6 +2185,64 @@ function addCommands(
       }
     },
     isEnabled
+  });
+  commands.addCommand(CommandIDs.toggleCollapseCmd, {
+    label: 'Toggle Collapse',
+    execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.toggleCurrentCellCollapse(tracker.currentWidget?.content);
+    }
+  });
+  commands.addCommand(CommandIDs.collapseAllCmd, {
+    label: 'Collapse All Cells',
+    execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.collapseAll(tracker.currentWidget?.content);
+    }
+  });
+  commands.addCommand(CommandIDs.uncollapseAllCmd, {
+    label: 'Un-Collapse All Cells', execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.uncollapseAll(tracker.currentWidget?.content);
+    }
+  });
+  commands.addCommand(CommandIDs.addHeaderAboveCmd, {
+    label: 'Add Header Above', execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.addHeaderAbove(tracker.currentWidget?.content);
+    }
+  });
+  commands.addCommand(CommandIDs.addHeaderBelowCmd, {
+    label: 'Add Header Below', execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.addHeaderBelow(tracker.currentWidget?.content);
+    }
+  });
+  commands.addCommand(CommandIDs.uncollapseHeaderCmd, {
+    label: 'Un-Collapse Header', execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.uncollapseCell(tracker.currentWidget?.content);
+    }
+  });
+  commands.addCommand(CommandIDs.collapseCmd, {
+    label: 'Collapse Header', execute: () => {
+      if (!tracker.currentWidget?.content) {
+        return;
+      }
+      NotebookActions.collapseCell(tracker.currentWidget?.content);
+    }
   });
 }
 

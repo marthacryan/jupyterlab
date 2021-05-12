@@ -40,7 +40,16 @@ const cmdIds = {
   split: 'notebook-cells:split',
   commandMode: 'notebook:command-mode',
   undo: 'notebook-cells:undo',
-  redo: 'notebook-cells:redo'
+  redo: 'notebook-cells:redo',
+  toggleCollapseCmd:'Collapsible_Headings:Toggle_Collapse',
+  manuallyUpdateCmd:'Collapsible_Headings:Manually_Update_Collapse_Buttons',
+  manuallyUpdateStateCmd:'Collapsible_Headings:Manually_Update_Notebook_Collapse_State',
+  collapseAllCmd:'Collapsible_Headings:Collapse_All',
+  uncollapseAllCmd:'Collapsible_Headings:UnCollapse_All',
+  addHeaderAboveCmd:'Collapsible_Headings:Add_Header_Above', 
+  addHeaderBelowCmd:'Collapsible_Headings:Add_Header_Below', 
+  uncollapseHeaderCmd:'Collapsible_Headings:Uncollapse_Header',
+  collapseCmd:'Collapsible_Headings:Collapse_Header'
 };
 
 export const SetupCommands = (
@@ -206,6 +215,42 @@ export const SetupCommands = (
     label: 'Redo',
     execute: () => NotebookActions.redo(nbWidget.content)
   });
+  commands.addCommand(cmdIds.toggleCollapseCmd, {
+    label: 'Toggle Collapse',
+    execute: () => { NotebookActions.toggleCurrentCellCollapse();
+    }
+  });
+  commands.addCommand(cmdIds.collapseAllCmd, {
+    label: 'Collapse All Cells',
+    execute: () => { NotebookActions.collapseAll();
+    }
+  });
+  commands.addCommand(cmdIds.uncollapseAllCmd, {
+    label: 'Un-Collapse All Cells', execute: () => {
+      NotebookActions.uncollapseAll();
+    }
+  });
+  commands.addCommand(cmdIds.addHeaderAboveCmd, {
+    label: 'Add Header Above', execute: () => {
+      NotebookActions.addHeaderAbove();
+    }
+  });
+  commands.addCommand(cmdIds.addHeaderBelowCmd, {
+    label: 'Add Header Below', execute: () => {
+      NotebookActions.addHeaderBelow();
+    }
+  });
+  commands.addCommand(cmdIds.uncollapseHeaderCmd, {
+    label: 'Un-Collapse Header', execute: () => {
+      NotebookActions.uncollapseCell();
+    }
+  });
+  commands.addCommand(cmdIds.collapseCmd, {
+    label: 'Collapse Header', execute: () => {
+      NotebookActions.collapseCell();
+    }
+  });
+
 
   let category = 'Notebook Operations';
   [
