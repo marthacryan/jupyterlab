@@ -1444,38 +1444,6 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     return { text: '', level: -1 };
   }
 
-  /**
-   * Indicates header level of cell.
-   * Returns -1 if not a header.
-   */
-  get headerLevel(): number {
-    let text = this.model.value.text;
-    const lines = text.split('\n');
-    const line = lines[0];
-    const line2 = lines.length > 1 ? lines[1] : undefined;
-    // logic here for determining if header and what level of header was stolen
-    // from the wonderful existing table of contents extension <3
-    let match = line.match(/^([#]{1,6}) (.*)/);
-    let match2 = line2 && line2.match(/^([=]{2,}|[-]{2,})/);
-    //let match3 = line.match(/<h([1-6])>(.*)<\/h\1>/i);
-    let match3 = line.match(/<h([1-6])(.*)>(.*)<\/h\1>/i);
-    //debugLog(line, match, match2, match3)
-    let isHeader =
-      match !== null ||
-      (match2 !== undefined && match2 !== null && Boolean(match2) !== false) ||
-      match3 !== null;
-    // There are only 6 levels of markdown headers so this gives one past that.
-    let level = 7;
-    if (match) {
-      level = match[1].length;
-    } else if (match2) {
-      level = match2[1][0] === '=' ? 1 : 2;
-    } else if (match3) {
-      level = parseInt(match3[1], 10);
-    }
-    return isHeader ? level : -1;
-  }
-
   get headerCollapsed(): boolean {
     return this._headerCollapsed;
   }
@@ -1523,7 +1491,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   protected renderInput(widget: Widget): void {
     this.addClass(RENDERED_CLASS);
     if (
-      this.headerLevel > 0 &&
+      this.headerInfo.level > 0 &&
       this.inputArea.promptNode.getElementsByClassName('ch-button').length == 0
     ) {
       let collapseButton = this.inputArea.promptNode.appendChild(

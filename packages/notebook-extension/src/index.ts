@@ -2230,24 +2230,6 @@ function addCommands(
       }
     }
   });
-  commands.addCommand(CommandIDs.uncollapseHeaderCmd, {
-    label: 'Un-Collapse Header',
-    execute: args => {
-      const current = getCurrent(tracker, shell, args);
-      if (current) {
-        return NotebookActions.uncollapseCell(current.content);
-      }
-    }
-  });
-  commands.addCommand(CommandIDs.collapseCmd, {
-    label: 'Collapse Header',
-    execute: args => {
-      const current = getCurrent(tracker, shell, args);
-      if (current) {
-        return NotebookActions.collapseCell(current.content);
-      }
-    }
-  });
 }
 
 /**
@@ -2287,9 +2269,7 @@ function populatePalette(
     CommandIDs.collapseAllCmd,
     CommandIDs.uncollapseAllCmd,
     CommandIDs.addHeaderAboveCmd,
-    CommandIDs.addHeaderBelowCmd,
-    CommandIDs.uncollapseHeaderCmd,
-    CommandIDs.collapseCmd
+    CommandIDs.addHeaderBelowCmd
   ].forEach(command => {
     palette.addItem({ command, category });
   });

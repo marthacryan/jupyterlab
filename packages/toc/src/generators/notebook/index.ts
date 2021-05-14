@@ -2,11 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import { ISanitizer } from '@jupyterlab/apputils';
-import {
-  MarkdownCell,
-  Cell,
-  ICellModel
-} from '@jupyterlab/cells';
+import { MarkdownCell, Cell, ICellModel } from '@jupyterlab/cells';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { nullTranslator } from '@jupyterlab/translation';
 import { TableOfContentsRegistry as Registry } from '../../registry';
@@ -85,7 +81,7 @@ function createNotebookGenerator(
   function generate(panel: NotebookPanel): INotebookHeading[] {
     let headings: INotebookHeading[] = [];
     panel.content.widgets.forEach((cell: Cell, index: number) => {
-      if (cell instanceof MarkdownCell && cell.headerLevel > 0) {
+      if (cell instanceof MarkdownCell && cell.headerInfo.level > 0) {
         headings.push({
           type: 'header',
           cellRef: cell,
@@ -95,8 +91,8 @@ function createNotebookGenerator(
             panel.content.mode = 'command';
             cell.node.scrollIntoView();
           },
-          text: cell.headerText,
-          level: cell.headerLevel
+          text: cell.headerInfo.text,
+          level: cell.headerInfo.level
         });
       }
     });
