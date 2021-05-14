@@ -1439,8 +1439,11 @@ export namespace NotebookActions {
       return which + 1;
     }
     let selectedHeaderInfo = NotebookActions.getHeaderInfo(cell);
-    let isMarkdown = cell instanceof MarkdownCell;
-    if (cell.isHidden || !isMarkdown || !selectedHeaderInfo.isHeader) {
+    if (
+      cell.isHidden ||
+      !(cell instanceof MarkdownCell) ||
+      !selectedHeaderInfo.isHeader
+    ) {
       // otherwise collapsing and uncollapsing already hidden stuff can
       // cause some funny looking bugs.
       return which + 1;
@@ -1489,6 +1492,7 @@ export namespace NotebookActions {
       }
       subCell.setHidden(false);
     }
+    cell.numberChildNodes = cellNum - which;
     return cellNum + 1;
   }
 

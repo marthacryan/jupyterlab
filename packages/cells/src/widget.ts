@@ -1473,6 +1473,14 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     this.renderInput(this._renderer!);
   }
 
+  get numberChildNodes(): number {
+    return this._numberChildNodes;
+  }
+  set numberChildNodes(value: number) {
+    this._numberChildNodes = value;
+    this.renderInput(this._renderer!);
+  }
+
   get toggleCollapsedSignal(): Signal<this, boolean> {
     return this._toggleCollapsedSignal;
   }
@@ -1520,6 +1528,24 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
         this.headerCollapsed = !this.headerCollapsed;
         this._toggleCollapsedSignal.emit(this._headerCollapsed);
       };
+    }
+    const expandButton = this.node.getElementsByClassName('expand-button');
+    if (this.headerCollapsed && expandButton.length === 0) {
+      const numberChildNodes = document.createElement('button');
+      numberChildNodes.className =
+        'bp3-button bp3-minimal jp-Button minimal expand-button';
+      numberChildNodes.textContent = `${this.numberChildNodes} cell${
+        this.numberChildNodes > 1 ? 's' : ''
+      } hidden`;
+      numberChildNodes.onclick = () => {
+        this.headerCollapsed = false;
+        this._toggleCollapsedSignal.emit(this._headerCollapsed);
+      };
+      this.node.appendChild(numberChildNodes);
+    } else if (!this.headerCollapsed && expandButton.length > 0) {
+      for (const el of expandButton) {
+        this.node.removeChild(el);
+      }
     }
     this.inputArea.renderInput(widget);
   }
@@ -1600,6 +1626,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   }
 
   private _monitor: ActivityMonitor<ICellModel, void>;
+  private _numberChildNodes: number;
   private _headerCollapsed: boolean;
   private _toggleCollapsedSignal = new Signal<this, boolean>(this);
   private _renderer: IRenderMime.IRenderer | null = null;
