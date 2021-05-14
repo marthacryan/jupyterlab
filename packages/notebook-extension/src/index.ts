@@ -250,14 +250,6 @@ namespace CommandIDs {
   export const collapseAllCmd = 'Collapsible_Headings:Collapse_All';
 
   export const uncollapseAllCmd = 'Collapsible_Headings:UnCollapse_All';
-
-  export const addHeaderAboveCmd = 'Collapsible_Headings:Add_Header_Above';
-
-  export const addHeaderBelowCmd = 'Collapsible_Headings:Add_Header_Below';
-
-  export const uncollapseHeaderCmd = 'Collapsible_Headings:Uncollapse_Header';
-
-  export const collapseCmd = 'Collapsible_Headings:Collapse_Header';
 }
 
 /**
