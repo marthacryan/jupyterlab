@@ -247,12 +247,6 @@ namespace CommandIDs {
 
   export const toggleCollapseCmd = 'Collapsible_Headings:Toggle_Collapse';
 
-  export const manuallyUpdateCmd =
-    'Collapsible_Headings:Manually_Update_Collapse_Buttons';
-
-  export const manuallyUpdateStateCmd =
-    'Collapsible_Headings:Manually_Update_Notebook_Collapse_State';
-
   export const collapseAllCmd = 'Collapsible_Headings:Collapse_All';
 
   export const uncollapseAllCmd = 'Collapsible_Headings:UnCollapse_All';
@@ -2264,8 +2258,6 @@ function populatePalette(
     CommandIDs.closeAndShutdown,
     CommandIDs.trust,
     CommandIDs.toggleCollapseCmd,
-    CommandIDs.manuallyUpdateCmd,
-    CommandIDs.manuallyUpdateStateCmd,
     CommandIDs.collapseAllCmd,
     CommandIDs.uncollapseAllCmd,
     CommandIDs.addHeaderAboveCmd,
