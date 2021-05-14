@@ -45,9 +45,6 @@
       "path": "../../testutils"
     },
     {
-      "path": "../application"
-    },
-    {
       "path": "../apputils"
     },
     {
@@ -73,9 +70,6 @@
     },
     {
       "path": "../services"
-    },
-    {
-      "path": "../settingregistry"
     },
     {
       "path": "../statusbar"

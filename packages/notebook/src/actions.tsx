@@ -1599,68 +1599,6 @@ export namespace NotebookActions {
   }
 
   /**
-   * Creates a header below the
-   *
-   * @param notebook - The target notebook widget.
-   */
-  export function addHeaderBelow(notebook: Notebook): any {
-    if (!notebook.activeCell || notebook.activeCellIndex === undefined) {
-      return;
-    }
-    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
-    if (!headerInfo.isHeader) {
-      let parentHeaderIndex = NotebookActions.findNearestParentHeader(
-        notebook.activeCellIndex,
-        notebook
-      );
-      headerInfo = NotebookActions.getHeaderInfo(
-        notebook.widgets[parentHeaderIndex]
-      );
-    }
-    let res = NotebookActions.findNextParentHeader(
-      notebook.activeCellIndex,
-      notebook
-    );
-    notebook.activeCellIndex = res;
-    NotebookActions.insertAbove(notebook);
-    NotebookActions.setMarkdownHeader(notebook, headerInfo.headerLevel);
-    NotebookActions.changeCellType(notebook, 'markdown');
-    notebook.activeCell.editor.setSelection({
-      start: { line: 0, column: headerInfo.headerLevel + 1 },
-      end: { line: 0, column: 10 }
-    });
-    notebook.activeCell.editor.focus();
-  }
-
-  /**
-   * Adds a header above the active cell of the widget
-   * (helps guide user on creating headers)
-   *
-   * @param notebook - The target notebook widget.
-   */
-  export function addHeaderAbove(notebook: Notebook): any {
-    if (!notebook.activeCell || notebook.activeCellIndex === undefined) {
-      return;
-    }
-    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
-    if (!headerInfo.isHeader) {
-      let res = NotebookActions.findNearestParentHeader(
-        notebook.activeCellIndex,
-        notebook
-      );
-      headerInfo = NotebookActions.getHeaderInfo(notebook.widgets[res]);
-    }
-    NotebookActions.insertAbove(notebook);
-    NotebookActions.setMarkdownHeader(notebook, headerInfo.headerLevel);
-    NotebookActions.changeCellType(notebook, 'markdown');
-    notebook.activeCell.editor.setSelection({
-      start: { line: 0, column: headerInfo.headerLevel + 1 },
-      end: { line: 0, column: 10 }
-    });
-    notebook.activeCell.editor.focus();
-  }
-
-  /**
    * If given cell is a markdown header, returns the header level.
    * If given cell is not markdown, returns 7 (there are only 6 levels of markdown headers)
    *

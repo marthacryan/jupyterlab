@@ -2206,24 +2206,6 @@ function addCommands(
       }
     }
   });
-  commands.addCommand(CommandIDs.addHeaderAboveCmd, {
-    label: 'Add Header Above',
-    execute: args => {
-      const current = getCurrent(tracker, shell, args);
-      if (current) {
-        return NotebookActions.addHeaderAbove(current.content);
-      }
-    }
-  });
-  commands.addCommand(CommandIDs.addHeaderBelowCmd, {
-    label: 'Add Header Below',
-    execute: args => {
-      const current = getCurrent(tracker, shell, args);
-      if (current) {
-        return NotebookActions.addHeaderBelow(current.content);
-      }
-    }
-  });
 }
 
 /**
@@ -2259,9 +2241,7 @@ function populatePalette(
     CommandIDs.trust,
     CommandIDs.toggleCollapseCmd,
     CommandIDs.collapseAllCmd,
-    CommandIDs.uncollapseAllCmd,
-    CommandIDs.addHeaderAboveCmd,
-    CommandIDs.addHeaderBelowCmd
+    CommandIDs.uncollapseAllCmd
   ].forEach(command => {
     palette.addItem({ command, category });
   });
