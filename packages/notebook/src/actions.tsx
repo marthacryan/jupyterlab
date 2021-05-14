@@ -1411,58 +1411,6 @@ export namespace NotebookActions {
     }
   }
 
-  /**
-   * Find the parent header of the active cell
-   *
-   * @param notebook - The target notebook widget.
-   */
-  export function findNextParentHeader(index: number, notebook: Notebook): any {
-    if (!notebook.widgets || index >= notebook.widgets.length) {
-      return -1;
-    }
-    let childHeaderInfo = NotebookActions.getHeaderInfo(
-      notebook.widgets[index]
-    );
-    for (let cellN = index + 1; cellN < notebook.widgets.length; cellN++) {
-      let hInfo = NotebookActions.getHeaderInfo(notebook.widgets[cellN]);
-      if (hInfo.isHeader && hInfo.headerLevel <= childHeaderInfo.headerLevel) {
-        return cellN;
-      }
-    }
-    // else no parent header found. return the index of the last cell
-    return notebook.widgets.length - 1;
-  }
-
-  /**
-   * Finds the nearest parent header in reference to the cell at the given index.
-   *
-   * @param index - The index of the cell within the cells list.
-   * @param notebook - The target notebook widget.
-   */
-  export function findNearestParentHeader(
-    index: number,
-    notebook: Notebook
-  ): number {
-    // Finds the nearest header above the given cell. If the cell is a header itself, it does not return itself;
-    // this can be checked directly by calling functions.
-    if (!notebook.widgets || index >= notebook.widgets.length) {
-      return -1; // strange...
-    }
-    let childHeaderInfo = NotebookActions.getHeaderInfo(
-      notebook.widgets[index]
-    );
-    let cellN = Math.min(notebook.widgets.length, index - 1);
-    while (cellN >= 0) {
-      let hInfo = NotebookActions.getHeaderInfo(notebook.widgets[cellN]);
-      if (hInfo.isHeader && hInfo.headerLevel < childHeaderInfo.headerLevel) {
-        return cellN;
-      }
-      cellN -= 1;
-    }
-    // else no parent header found.
-    return -1;
-  }
-
   export function getCellIndex(cell: Cell, notebook: Notebook): number {
     return findIndex(notebook.widgets, (possibleCell: Cell, index: number) => {
       return cell.model.id === possibleCell.model.id;
@@ -1562,23 +1510,6 @@ export namespace NotebookActions {
         !headerInfo.collapsed,
         notebook
       );
-    } else {
-      // then toggle parent!
-      let parentLoc = NotebookActions.findNearestParentHeader(
-        notebook.activeCellIndex,
-        notebook
-      );
-      if (parentLoc == -1) {
-        // no parent, can't be collapsed so nothing to do.
-        return;
-      }
-      NotebookActions.setCellCollapse(
-        notebook.widgets[parentLoc],
-        !NotebookActions.getHeaderInfo(notebook.widgets[parentLoc]).collapsed,
-        notebook
-      );
-      // otherwise the active cell will still be the now (usually) hidden cell
-      notebook.activeCellIndex = parentLoc;
     }
     ElementExt.scrollIntoViewIfNeeded(notebook.node, notebook.activeCell.node);
   }
@@ -1607,9 +1538,6 @@ export namespace NotebookActions {
   export function getHeaderInfo(
     cell: Cell
   ): { isHeader: boolean; headerLevel: number; collapsed?: boolean } {
-    if (cell == undefined) {
-      return { isHeader: false, headerLevel: -1 };
-    }
     if (!(cell instanceof MarkdownCell)) {
       return { isHeader: false, headerLevel: 7 };
     }
