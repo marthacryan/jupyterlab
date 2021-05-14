@@ -4,7 +4,7 @@
 import { CommandRegistry } from '@lumino/commands';
 import { sessionContextDialogs } from '@jupyterlab/apputils';
 import { CompletionHandler } from '@jupyterlab/completer';
-import { NotebookPanel, NotebookActions, NotebookTracker } from '@jupyterlab/notebook';
+import { NotebookPanel, NotebookActions } from '@jupyterlab/notebook';
 import {
   SearchInstance,
   NotebookSearchProvider
@@ -40,24 +40,14 @@ const cmdIds = {
   split: 'notebook-cells:split',
   commandMode: 'notebook:command-mode',
   undo: 'notebook-cells:undo',
-  redo: 'notebook-cells:redo',
-  toggleCollapseCmd:'Collapsible_Headings:Toggle_Collapse',
-  manuallyUpdateCmd:'Collapsible_Headings:Manually_Update_Collapse_Buttons',
-  manuallyUpdateStateCmd:'Collapsible_Headings:Manually_Update_Notebook_Collapse_State',
-  collapseAllCmd:'Collapsible_Headings:Collapse_All',
-  uncollapseAllCmd:'Collapsible_Headings:UnCollapse_All',
-  addHeaderAboveCmd:'Collapsible_Headings:Add_Header_Above', 
-  addHeaderBelowCmd:'Collapsible_Headings:Add_Header_Below', 
-  uncollapseHeaderCmd:'Collapsible_Headings:Uncollapse_Header',
-  collapseCmd:'Collapsible_Headings:Collapse_Header'
+  redo: 'notebook-cells:redo'
 };
 
 export const SetupCommands = (
   commands: CommandRegistry,
   palette: CommandPalette,
   nbWidget: NotebookPanel,
-  handler: CompletionHandler,
-  tracker: NotebookTracker
+  handler: CompletionHandler
 ) => {
   // Add commands.
   commands.addCommand(cmdIds.invoke, {
@@ -216,65 +206,6 @@ export const SetupCommands = (
     label: 'Redo',
     execute: () => NotebookActions.redo(nbWidget.content)
   });
-  commands.addCommand(cmdIds.toggleCollapseCmd, {
-    label: 'Toggle Collapse',
-    execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.toggleCurrentCellCollapse(tracker.currentWidget?.content);
-    }
-  });
-  commands.addCommand(cmdIds.collapseAllCmd, {
-    label: 'Collapse All Cells',
-    execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.collapseAll(tracker.currentWidget?.content);
-    }
-  });
-  commands.addCommand(cmdIds.uncollapseAllCmd, {
-    label: 'Un-Collapse All Cells', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.uncollapseAll(tracker.currentWidget?.content);
-    }
-  });
-  commands.addCommand(cmdIds.addHeaderAboveCmd, {
-    label: 'Add Header Above', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.addHeaderAbove(tracker.currentWidget?.content);
-    }
-  });
-  commands.addCommand(cmdIds.addHeaderBelowCmd, {
-    label: 'Add Header Below', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.addHeaderBelow(tracker.currentWidget?.content);
-    }
-  });
-  commands.addCommand(cmdIds.uncollapseHeaderCmd, {
-    label: 'Un-Collapse Header', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.uncollapseCell(tracker.currentWidget?.content);
-    }
-  });
-  commands.addCommand(cmdIds.collapseCmd, {
-    label: 'Collapse Header', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
-      }
-      NotebookActions.collapseCell(tracker.currentWidget?.content);
-    }
-  });
-
 
   let category = 'Notebook Operations';
   [
