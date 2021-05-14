@@ -1341,6 +1341,10 @@ function addCommands(
     }
   };
 
+  const isEnabledAndHeaderSelected = (): boolean => {
+    return Private.isEnabledAndHeaderSelected(shell, tracker);
+  };
+
   // Set up collapse signal for each header cell in a notebook
   tracker.currentChanged.connect(
     (sender: INotebookTracker, panel: NotebookPanel) => {
@@ -2184,13 +2188,14 @@ function addCommands(
     isEnabled
   });
   commands.addCommand(CommandIDs.toggleCollapseCmd, {
-    label: 'Toggle Collapse',
+    label: 'Toggle Collapse Notebook Header',
     execute: args => {
       const current = getCurrent(tracker, shell, args);
       if (current) {
         return NotebookActions.toggleCurrentCellCollapse(current.content);
       }
-    }
+    },
+    isEnabled: isEnabledAndHeaderSelected
   });
   commands.addCommand(CommandIDs.collapseAllCmd, {
     label: 'Collapse All Cells',
@@ -2615,6 +2620,31 @@ namespace Private {
     }
     const { content } = tracker.currentWidget!;
     const index = content.activeCellIndex;
+    // If there are selections that are not the active cell,
+    // this command is confusing, so disable it.
+    for (let i = 0; i < content.widgets.length; ++i) {
+      if (content.isSelected(content.widgets[i]) && i !== index) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Whether there is an notebook active, with a single selected cell.
+   */
+  export function isEnabledAndHeaderSelected(
+    shell: JupyterFrontEnd.IShell,
+    tracker: INotebookTracker
+  ): boolean {
+    if (!Private.isEnabled(shell, tracker)) {
+      return false;
+    }
+    const { content } = tracker.currentWidget!;
+    const index = content.activeCellIndex;
+    if (!(content.activeCell instanceof MarkdownCell)) {
+      return false;
+    }
     // If there are selections that are not the active cell,
     // this command is confusing, so disable it.
     for (let i = 0; i < content.widgets.length; ++i) {

@@ -1512,6 +1512,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     this.addClass(RENDERED_CLASS);
     if (
       this.headerInfo.level > 0 &&
+      this._numberChildNodes !== 0 &&
       this.inputArea.promptNode.getElementsByClassName('ch-button').length == 0
     ) {
       let collapseButton = this.inputArea.promptNode.appendChild(
@@ -1534,17 +1535,23 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
       const numberChildNodes = document.createElement('button');
       numberChildNodes.className =
         'bp3-button bp3-minimal jp-Button minimal expand-button';
-      numberChildNodes.textContent = `${this.numberChildNodes} cell${
-        this.numberChildNodes > 1 ? 's' : ''
+      numberChildNodes.textContent = `${this._numberChildNodes} cell${
+        this._numberChildNodes > 1 ? 's' : ''
       } hidden`;
       numberChildNodes.onclick = () => {
         this.headerCollapsed = false;
         this._toggleCollapsedSignal.emit(this._headerCollapsed);
       };
       this.node.appendChild(numberChildNodes);
-    } else if (!this.headerCollapsed && expandButton.length > 0) {
-      for (const el of expandButton) {
-        this.node.removeChild(el);
+    } else if (expandButton.length > 0) {
+      if (this._headerCollapsed) {
+        expandButton[0].textContent = `${this._numberChildNodes} cell${
+          this._numberChildNodes > 1 ? 's' : ''
+        } hidden`;
+      } else {
+        for (const el of expandButton) {
+          this.node.removeChild(el);
+        }
       }
     }
     this.inputArea.renderInput(widget);

@@ -1448,7 +1448,6 @@ export namespace NotebookActions {
       // cause some funny looking bugs.
       return which + 1;
     }
-    NotebookActions.setCollapsed(cell, collapsing);
     let localCollapsed = false;
     let localCollapsedLevel = 0;
     // iterate through all cells after the active cell.
@@ -1481,10 +1480,7 @@ export namespace NotebookActions {
         continue;
       }
 
-      if (
-        NotebookActions.getHeaderInfo(subCell).collapsed &&
-        subCellHeaderInfo.isHeader
-      ) {
+      if (subCellHeaderInfo.collapsed && subCellHeaderInfo.isHeader) {
         localCollapsed = true;
         localCollapsedLevel = subCellHeaderInfo.headerLevel;
         // but don't collapse the locally collapsed header, so continue to
@@ -1492,7 +1488,11 @@ export namespace NotebookActions {
       }
       subCell.setHidden(false);
     }
+    if (which === notebook.widgets.length - 1) {
+      cellNum -= 1;
+    }
     cell.numberChildNodes = cellNum - which;
+    NotebookActions.setCollapsed(cell, collapsing);
     return cellNum + 1;
   }
 
