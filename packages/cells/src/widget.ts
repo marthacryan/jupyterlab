@@ -138,6 +138,8 @@ const MARKDOWN_CELL_CLASS = 'jp-MarkdownCell';
  */
 const MARKDOWN_OUTPUT_CLASS = 'jp-MarkdownOutput';
 
+const MARKDOWN_HEADING_COLLAPSED = 'heading_collapsed';
+
 /**
  * The class name added to raw cells.
  */
@@ -1396,6 +1398,11 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     // Stop codemirror handling paste
     this.editor.setOption('handlePaste', false);
 
+    // Check if cell is set to be collapsed
+    this._headerCollapsed = (this.model.metadata.get(
+      MARKDOWN_HEADING_COLLAPSED
+    ) ?? false) as boolean;
+
     // Throttle the rendering rate of the widget.
     this._monitor = new ActivityMonitor({
       signal: this.model.contentChanged,
@@ -1449,6 +1456,11 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   }
   set headerCollapsed(value: boolean) {
     this._headerCollapsed = value;
+    if (value) {
+      this.model.metadata.set(MARKDOWN_HEADING_COLLAPSED, value);
+    } else if (this.model.metadata.has(MARKDOWN_HEADING_COLLAPSED)) {
+      this.model.metadata.delete(MARKDOWN_HEADING_COLLAPSED);
+    }
     this.inputArea.promptNode
       .getElementsByClassName('ch-button')[0]
       .setAttribute(
@@ -1588,7 +1600,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   }
 
   private _monitor: ActivityMonitor<ICellModel, void>;
-  private _headerCollapsed: boolean = false;
+  private _headerCollapsed: boolean;
   private _toggleCollapsedSignal = new Signal<this, boolean>(this);
   private _renderer: IRenderMime.IRenderer | null = null;
   private _rendermime: IRenderMimeRegistry;

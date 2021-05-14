@@ -57,7 +57,8 @@ import {
   NotebookWidgetFactory,
   StaticNotebook,
   CommandEditStatus,
-  NotebookTrustStatus
+  NotebookTrustStatus,
+  Notebook
 } from '@jupyterlab/notebook';
 import {
   IObservableList,
@@ -1332,6 +1333,14 @@ function addCommands(
     return Private.isEnabledAndSingleSelected(shell, tracker);
   };
 
+  const refreshCellCollapsed = (notebook: Notebook): void => {
+    for (const cell of notebook.widgets) {
+      if (cell instanceof MarkdownCell && cell.headerCollapsed) {
+        NotebookActions.setCellCollapse(cell, true, notebook);
+      }
+    }
+  };
+
   // Set up collapse signal for each header cell in a notebook
   tracker.currentChanged.connect(
     (sender: INotebookTracker, panel: NotebookPanel) => {
@@ -1355,6 +1364,9 @@ function addCommands(
               }
             );
           }
+          // Might be overkill to refresh this every time, but
+          // it helps to keep the collapse state consistent.
+          refreshCellCollapsed(panel.content);
         }
       );
     }
