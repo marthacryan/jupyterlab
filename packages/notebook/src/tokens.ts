@@ -104,19 +104,3 @@ export interface INotebookTracker extends IWidgetTracker<NotebookPanel> {
    */
   readonly selectionChanged: ISignal<this, void>;
 }
-
-/* tslint:disable */
-/**
- * The notebook tracker token.
- */
-export const IHeadingsCollapser = new Token<IHeadingsCollapser>(
-  '@jupyterlab/notebook:IHeadingsCollapser'
-);
-/* tslint:enable */
-
-/**
- * An object that tracks notebook widgets.
- */
-export interface IHeadingsCollapser {
-  collapseAll: (nbTrack: INotebookTracker) => any;
-}

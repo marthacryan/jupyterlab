@@ -59,7 +59,10 @@ import {
   CommandEditStatus,
   NotebookTrustStatus
 } from '@jupyterlab/notebook';
-import { IObservableList, IObservableUndoableList } from '@jupyterlab/observables';
+import {
+  IObservableList,
+  IObservableUndoableList
+} from '@jupyterlab/observables';
 
 import { IPropertyInspectorProvider } from '@jupyterlab/property-inspector';
 
@@ -242,27 +245,25 @@ namespace CommandIDs {
 
   export const replaceSelection = 'notebook:replace-selection';
 
-  export const toggleCollapseCmd = 'Collapsible_Headings:Toggle_Collapse';  
+  export const toggleCollapseCmd = 'Collapsible_Headings:Toggle_Collapse';
 
-  export const manuallyUpdateCmd = 'Collapsible_Headings:Manually_Update_Collapse_Buttons';
+  export const manuallyUpdateCmd =
+    'Collapsible_Headings:Manually_Update_Collapse_Buttons';
 
-  export const manuallyUpdateStateCmd = 'Collapsible_Headings:Manually_Update_Notebook_Collapse_State';
+  export const manuallyUpdateStateCmd =
+    'Collapsible_Headings:Manually_Update_Notebook_Collapse_State';
 
   export const collapseAllCmd = 'Collapsible_Headings:Collapse_All';
 
   export const uncollapseAllCmd = 'Collapsible_Headings:UnCollapse_All';
 
-  export const addHeaderAboveCmd = 'Collapsible_Headings:Add_Header_Above'; 
+  export const addHeaderAboveCmd = 'Collapsible_Headings:Add_Header_Above';
 
-  export const addHeaderBelowCmd = 'Collapsible_Headings:Add_Header_Below'; 
+  export const addHeaderBelowCmd = 'Collapsible_Headings:Add_Header_Below';
 
   export const uncollapseHeaderCmd = 'Collapsible_Headings:Uncollapse_Header';
 
   export const collapseCmd = 'Collapsible_Headings:Collapse_Header';
-
-  export const handleUpCmd = 'Collapsible_Headings:HandleUp';
-
-  export const handleDownCmd = 'Collapsible_Headings:HandleDown';
 }
 
 /**
@@ -318,14 +319,7 @@ const tools: JupyterFrontEndPlugin<INotebookTools> = {
   provides: INotebookTools,
   id: '@jupyterlab/notebook-extension:tools',
   autoStart: true,
-  requires: [
-    INotebookTracker,
-    IEditorServices,
-    IStateDB,
-    ITranslator,
-    ISettingRegistry,
-    ICommandPalette
-  ],
+  requires: [INotebookTracker, IEditorServices, IStateDB, ITranslator],
   optional: [IPropertyInspectorProvider]
 };
 
@@ -584,8 +578,6 @@ function activateNotebookTools(
   editorServices: IEditorServices,
   state: IStateDB,
   translator: ITranslator,
-  settings: ISettingRegistry,
-  palette: ICommandPalette,
   inspectorProvider: IPropertyInspectorProvider | null
 ): INotebookTools {
   const trans = translator.load('jupyterlab');
@@ -668,6 +660,7 @@ function activateNotebookTools(
 
   notebookTools.addItem({ tool: activeCellTool, section: 'common', rank: 1 });
   notebookTools.addItem({ tool: slideShow, section: 'common', rank: 2 });
+
   notebookTools.addItem({
     tool: cellMetadataEditor,
     section: 'advanced',
@@ -1353,29 +1346,33 @@ function addCommands(
     return Private.isEnabledAndSingleSelected(shell, tracker);
   };
 
-  tracker.currentChanged.connect((sender: INotebookTracker, panel: NotebookPanel) => {
-
-    // Not sure if this is running too often, but using stateChanged
-    // signal caused the collapse button to not work for new heading cells that
-    // hadn't been saved yet. 
-    panel.content.model?.cells.changed.connect(
-      (
-        list: IObservableUndoableList<ICellModel>,
-        args: IObservableList.IChangedArgs<ICellModel>
-      ) => {
-        if (args.type === 'add') {
+  // Set up collapse signal for each header cell in a notebook
+  tracker.currentChanged.connect(
+    (sender: INotebookTracker, panel: NotebookPanel) => {
+      panel.content.model?.cells.changed.connect(
+        (
+          list: IObservableUndoableList<ICellModel>,
+          args: IObservableList.IChangedArgs<ICellModel>
+        ) => {
           const cell = panel.content.widgets[args.newIndex];
-          if (cell instanceof MarkdownCell) {
+          if (
+            cell instanceof MarkdownCell &&
+            (args.type === 'add' || args.type === 'set')
+          ) {
             cell.toggleCollapsedSignal.connect(
               (newCell: MarkdownCell, collapsing: boolean) => {
-                NotebookActions.setCellCollapse(newCell, collapsing, panel.content);
+                NotebookActions.setCellCollapse(
+                  newCell,
+                  collapsing,
+                  panel.content
+                );
               }
-            )
+            );
           }
         }
-      }
-    );
-  });
+      );
+    }
+  );
 
   commands.addCommand(CommandIDs.runAndAdvance, {
     label: trans.__('Run Selected Cells'),
@@ -2190,60 +2187,65 @@ function addCommands(
   });
   commands.addCommand(CommandIDs.toggleCollapseCmd, {
     label: 'Toggle Collapse',
-    execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.toggleCurrentCellCollapse(current.content);
       }
-      NotebookActions.toggleCurrentCellCollapse(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(CommandIDs.collapseAllCmd, {
     label: 'Collapse All Cells',
-    execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.collapseAll(current.content);
       }
-      NotebookActions.collapseAll(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(CommandIDs.uncollapseAllCmd, {
-    label: 'Un-Collapse All Cells', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    label: 'Un-Collapse All Cells',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.uncollapseAll(current.content);
       }
-      NotebookActions.uncollapseAll(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(CommandIDs.addHeaderAboveCmd, {
-    label: 'Add Header Above', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    label: 'Add Header Above',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.addHeaderAbove(current.content);
       }
-      NotebookActions.addHeaderAbove(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(CommandIDs.addHeaderBelowCmd, {
-    label: 'Add Header Below', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    label: 'Add Header Below',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.addHeaderBelow(current.content);
       }
-      NotebookActions.addHeaderBelow(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(CommandIDs.uncollapseHeaderCmd, {
-    label: 'Un-Collapse Header', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    label: 'Un-Collapse Header',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.uncollapseCell(current.content);
       }
-      NotebookActions.uncollapseCell(tracker.currentWidget?.content);
     }
   });
   commands.addCommand(CommandIDs.collapseCmd, {
-    label: 'Collapse Header', execute: () => {
-      if (!tracker.currentWidget?.content) {
-        return;
+    label: 'Collapse Header',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.collapseCell(current.content);
       }
-      NotebookActions.collapseCell(tracker.currentWidget?.content);
     }
   });
 }
@@ -2287,9 +2289,7 @@ function populatePalette(
     CommandIDs.addHeaderAboveCmd,
     CommandIDs.addHeaderBelowCmd,
     CommandIDs.uncollapseHeaderCmd,
-    CommandIDs.collapseCmd,
-    CommandIDs.handleUpCmd,
-    CommandIDs.handleDownCmd
+    CommandIDs.collapseCmd
   ].forEach(command => {
     palette.addItem({ command, category });
   });
