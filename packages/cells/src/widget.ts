@@ -138,7 +138,11 @@ const MARKDOWN_CELL_CLASS = 'jp-MarkdownCell';
  */
 const MARKDOWN_OUTPUT_CLASS = 'jp-MarkdownOutput';
 
-const MARKDOWN_HEADING_COLLAPSED = 'heading_collapsed';
+const MARKDOWN_HEADING_COLLAPSED = 'jp-MarkdownHeadingCollapsed';
+
+const HEADING_COLLAPSER_CLASS = 'jp-collapseHeadingButton';
+
+const SHOW_HIDDEN_CELLS_CLASS = 'jp-showHiddenCellsButton';
 
 /**
  * The class name added to raw cells.
@@ -1399,7 +1403,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     this.editor.setOption('handlePaste', false);
 
     // Check if cell is set to be collapsed
-    this._headerCollapsed = (this.model.metadata.get(
+    this._headingCollapsed = (this.model.metadata.get(
       MARKDOWN_HEADING_COLLAPSED
     ) ?? false) as boolean;
 
@@ -1451,25 +1455,28 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     return { text: '', level: -1 };
   }
 
-  get headerCollapsed(): boolean {
-    return this._headerCollapsed;
+  get headingCollapsed(): boolean {
+    return this._headingCollapsed;
   }
-  set headerCollapsed(value: boolean) {
-    this._headerCollapsed = value;
+  set headingCollapsed(value: boolean) {
+    this._headingCollapsed = value;
     if (value) {
       this.model.metadata.set(MARKDOWN_HEADING_COLLAPSED, value);
     } else if (this.model.metadata.has(MARKDOWN_HEADING_COLLAPSED)) {
       this.model.metadata.delete(MARKDOWN_HEADING_COLLAPSED);
     }
-    this.inputArea.promptNode
-      .getElementsByClassName('ch-button')[0]
-      .setAttribute(
+    const collapseButton = this.inputArea.promptNode.getElementsByClassName(
+      'ch-button'
+    )[0];
+    if (collapseButton) {
+      collapseButton.setAttribute(
         'style',
         `background:
       ${
         value ? 'var(--jp-icon-caret-right)' : 'var(--jp-icon-caret-down)'
       } no-repeat center`
       );
+    }
     this.renderInput(this._renderer!);
   }
 
@@ -1505,47 +1512,50 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     }
   }
 
-  /**
-   * Render an input instead of the text editor.
-   */
-  protected renderInput(widget: Widget): void {
-    this.addClass(RENDERED_CLASS);
+  protected maybeCreateCollapseButton(): void {
     if (
       this.headerInfo.level > 0 &&
-      this._numberChildNodes !== 0 &&
-      this.inputArea.promptNode.getElementsByClassName('ch-button').length == 0
+      this.inputArea.promptNode.getElementsByClassName(HEADING_COLLAPSER_CLASS)
+        .length == 0
     ) {
       let collapseButton = this.inputArea.promptNode.appendChild(
         document.createElement('button')
       );
-      collapseButton.className =
-        'bp3-button bp3-minimal jp-Button minimal ch-button';
+      collapseButton.className = `bp3-button bp3-minimal jp-Button minimal ${HEADING_COLLAPSER_CLASS}`;
       collapseButton.style.background = `${
-        this._headerCollapsed
+        this._headingCollapsed
           ? 'var(--jp-icon-caret-right)'
           : 'var(--jp-icon-caret-down)'
       } no-repeat center`;
       collapseButton.onclick = () => {
-        this.headerCollapsed = !this.headerCollapsed;
-        this._toggleCollapsedSignal.emit(this._headerCollapsed);
+        this.headingCollapsed = !this.headingCollapsed;
+        this._toggleCollapsedSignal.emit(this._headingCollapsed);
       };
     }
-    const expandButton = this.node.getElementsByClassName('expand-button');
-    if (this.headerCollapsed && expandButton.length === 0) {
+  }
+
+  protected maybeCreateOrUpdateExpandButton(): void {
+    const expandButton = this.node.getElementsByClassName(
+      SHOW_HIDDEN_CELLS_CLASS
+    );
+    if (
+      this.headingCollapsed &&
+      expandButton.length === 0 &&
+      this._numberChildNodes > 0
+    ) {
       const numberChildNodes = document.createElement('button');
-      numberChildNodes.className =
-        'bp3-button bp3-minimal jp-Button minimal expand-button';
+      numberChildNodes.className = `bp3-button bp3-minimal jp-Button minimal ${SHOW_HIDDEN_CELLS_CLASS}`;
       numberChildNodes.textContent = `${this._numberChildNodes} cell${
         this._numberChildNodes > 1 ? 's' : ''
       } hidden`;
       numberChildNodes.onclick = () => {
-        this.headerCollapsed = false;
-        this._toggleCollapsedSignal.emit(this._headerCollapsed);
+        this.headingCollapsed = false;
+        this._toggleCollapsedSignal.emit(this._headingCollapsed);
       };
       this.node.appendChild(numberChildNodes);
     } else if (expandButton.length > 0) {
-      if (this._headerCollapsed) {
-        expandButton[0].textContent = `${this._numberChildNodes} cell${
+      if (this._headingCollapsed) {
+        expandButton[0].textContent = `⮑ ${this._numberChildNodes} cell${
           this._numberChildNodes > 1 ? 's' : ''
         } hidden`;
       } else {
@@ -1554,6 +1564,15 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
         }
       }
     }
+  }
+
+  /**
+   * Render an input instead of the text editor.
+   */
+  protected renderInput(widget: Widget): void {
+    this.addClass(RENDERED_CLASS);
+    this.maybeCreateCollapseButton();
+    this.maybeCreateOrUpdateExpandButton();
     this.inputArea.renderInput(widget);
   }
 
@@ -1634,7 +1653,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
 
   private _monitor: ActivityMonitor<ICellModel, void>;
   private _numberChildNodes: number;
-  private _headerCollapsed: boolean;
+  private _headingCollapsed: boolean;
   private _toggleCollapsedSignal = new Signal<this, boolean>(this);
   private _renderer: IRenderMime.IRenderer | null = null;
   private _rendermime: IRenderMimeRegistry;

@@ -1335,7 +1335,7 @@ function addCommands(
 
   const refreshCellCollapsed = (notebook: Notebook): void => {
     for (const cell of notebook.widgets) {
-      if (cell instanceof MarkdownCell && cell.headerCollapsed) {
+      if (cell instanceof MarkdownCell && cell.headingCollapsed) {
         NotebookActions.setCellCollapse(cell, true, notebook);
       }
     }

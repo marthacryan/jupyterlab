@@ -1488,10 +1488,11 @@ export namespace NotebookActions {
       }
       subCell.setHidden(false);
     }
-    if (which === notebook.widgets.length - 1) {
-      cellNum -= 1;
+    if (cellNum === notebook.widgets.length) {
+      cell.numberChildNodes = cellNum - which - 1;
+    } else {
+      cell.numberChildNodes = cellNum - which;
     }
-    cell.numberChildNodes = cellNum - which;
     NotebookActions.setCollapsed(cell, collapsing);
     return cellNum + 1;
   }
@@ -1519,7 +1520,7 @@ export namespace NotebookActions {
   }
 
   /**
-   * If cell is a markdown header, sets the headerCollapsed field,
+   * If cell is a markdown header, sets the headingCollapsed field,
    * and otherwise hides the cell.
    *
    * @param cell - The cell to collapse / uncollapse
@@ -1527,7 +1528,7 @@ export namespace NotebookActions {
    */
   export function setCollapsed(cell: Cell, collapsing: boolean): any {
     if (cell instanceof MarkdownCell) {
-      cell.headerCollapsed = collapsing;
+      cell.headingCollapsed = collapsing;
     } else {
       cell.setHidden(collapsing);
     }
@@ -1546,7 +1547,7 @@ export namespace NotebookActions {
       return { isHeader: false, headerLevel: 7 };
     }
     let level = cell.headerInfo.level;
-    let collapsed = cell.headerCollapsed;
+    let collapsed = cell.headingCollapsed;
     return { isHeader: level > 0, headerLevel: level, collapsed: collapsed };
   }
 
