@@ -1386,7 +1386,7 @@ export namespace NotebookActions {
    */
   export function collapseAll(notebook: Notebook): any {
     for (const cell of notebook.widgets) {
-      if (NotebookActions.getHeaderInfo(cell).isHeader) {
+      if (NotebookActions.getheadingInfo(cell).isHeader) {
         NotebookActions.setCellCollapse(cell, true, notebook);
         // setCellCollapse tries to be smart and not change metadata of hidden cells.
         // that's not the desired behavior of this function though, which wants to act
@@ -1403,7 +1403,7 @@ export namespace NotebookActions {
    */
   export function uncollapseAll(notebook: Notebook): any {
     for (const cell of notebook.widgets) {
-      if (NotebookActions.getHeaderInfo(cell).isHeader) {
+      if (NotebookActions.getheadingInfo(cell).isHeader) {
         NotebookActions.setCellCollapse(cell, false, notebook);
         // similar to collapseAll.
         NotebookActions.setCollapsed(cell, false);
@@ -1438,11 +1438,11 @@ export namespace NotebookActions {
     if (!notebook.widgets.length) {
       return which + 1;
     }
-    let selectedHeaderInfo = NotebookActions.getHeaderInfo(cell);
+    let selectedheadingInfo = NotebookActions.getheadingInfo(cell);
     if (
       cell.isHidden ||
       !(cell instanceof MarkdownCell) ||
-      !selectedHeaderInfo.isHeader
+      !selectedheadingInfo.isHeader
     ) {
       // otherwise collapsing and uncollapsing already hidden stuff can
       // cause some funny looking bugs.
@@ -1454,10 +1454,10 @@ export namespace NotebookActions {
     let cellNum = which + 1;
     for (cellNum = which + 1; cellNum < notebook.widgets.length; cellNum++) {
       let subCell = notebook.widgets[cellNum];
-      let subCellHeaderInfo = NotebookActions.getHeaderInfo(subCell);
+      let subCellheadingInfo = NotebookActions.getheadingInfo(subCell);
       if (
-        subCellHeaderInfo.isHeader &&
-        subCellHeaderInfo.headerLevel <= selectedHeaderInfo.headerLevel
+        subCellheadingInfo.isHeader &&
+        subCellheadingInfo.headerLevel <= selectedheadingInfo.headerLevel
       ) {
         // then reached an equivalent or higher header level than the
         // original the end of the collapse.
@@ -1466,8 +1466,8 @@ export namespace NotebookActions {
       }
       if (
         localCollapsed &&
-        subCellHeaderInfo.isHeader &&
-        subCellHeaderInfo.headerLevel <= localCollapsedLevel
+        subCellheadingInfo.isHeader &&
+        subCellheadingInfo.headerLevel <= localCollapsedLevel
       ) {
         // then reached the end of the local collapsed, so unset NotebookActions.
         localCollapsed = false;
@@ -1480,9 +1480,9 @@ export namespace NotebookActions {
         continue;
       }
 
-      if (subCellHeaderInfo.collapsed && subCellHeaderInfo.isHeader) {
+      if (subCellheadingInfo.collapsed && subCellheadingInfo.isHeader) {
         localCollapsed = true;
-        localCollapsedLevel = subCellHeaderInfo.headerLevel;
+        localCollapsedLevel = subCellheadingInfo.headerLevel;
         // but don't collapse the locally collapsed header, so continue to
         // uncollapse the header. This will get noticed in the next round.
       }
@@ -1507,12 +1507,12 @@ export namespace NotebookActions {
     if (!notebook.activeCell || notebook.activeCellIndex === undefined) {
       return;
     }
-    let headerInfo = NotebookActions.getHeaderInfo(notebook.activeCell);
-    if (headerInfo.isHeader) {
+    let headingInfo = NotebookActions.getheadingInfo(notebook.activeCell);
+    if (headingInfo.isHeader) {
       // Then toggle!
       NotebookActions.setCellCollapse(
         notebook.activeCell,
-        !headerInfo.collapsed,
+        !headingInfo.collapsed,
         notebook
       );
     }
@@ -1540,13 +1540,13 @@ export namespace NotebookActions {
    *
    * @param cell - The target cell widget.
    */
-  export function getHeaderInfo(
+  export function getheadingInfo(
     cell: Cell
   ): { isHeader: boolean; headerLevel: number; collapsed?: boolean } {
     if (!(cell instanceof MarkdownCell)) {
       return { isHeader: false, headerLevel: 7 };
     }
-    let level = cell.headerInfo.level;
+    let level = cell.headingInfo.level;
     let collapsed = cell.headingCollapsed;
     return { isHeader: level > 0, headerLevel: level, collapsed: collapsed };
   }

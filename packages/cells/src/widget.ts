@@ -1435,7 +1435,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
    * Text that represents the header if cell is a header.
    * Returns empty string if not a header.
    */
-  get headerInfo(): { text: string; level: number } {
+  get headingInfo(): { text: string; level: number } {
     let text = this.model.value.text;
     const lines = text.split('\n');
     const line = lines[0];
@@ -1514,7 +1514,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
 
   protected maybeCreateCollapseButton(): void {
     if (
-      this.headerInfo.level > 0 &&
+      this.headingInfo.level > 0 &&
       this.inputArea.promptNode.getElementsByClassName(HEADING_COLLAPSER_CLASS)
         .length == 0
     ) {
