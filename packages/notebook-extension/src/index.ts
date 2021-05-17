@@ -2192,7 +2192,7 @@ function addCommands(
     execute: args => {
       const current = getCurrent(tracker, shell, args);
       if (current) {
-        return NotebookActions.toggleCurrentCellCollapse(current.content);
+        return NotebookActions.toggleCurrentHeadingCollapse(current.content);
       }
     },
     isEnabled: isEnabledAndHeadingSelected
