@@ -1402,7 +1402,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
     // Stop codemirror handling paste
     this.editor.setOption('handlePaste', false);
 
-    // Check if cell is set to be collapsed
+    // Check if heading cell is set to be collapsed
     this._headingCollapsed = (this.model.metadata.get(
       MARKDOWN_HEADING_COLLAPSED
     ) ?? false) as boolean;
@@ -1466,7 +1466,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
       this.model.metadata.delete(MARKDOWN_HEADING_COLLAPSED);
     }
     const collapseButton = this.inputArea.promptNode.getElementsByClassName(
-      'ch-button'
+      HEADING_COLLAPSER_CLASS
     )[0];
     if (collapseButton) {
       collapseButton.setAttribute(
