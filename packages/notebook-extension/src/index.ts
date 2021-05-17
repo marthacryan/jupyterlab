@@ -1341,8 +1341,8 @@ function addCommands(
     }
   };
 
-  const isenabledandheadingSelected = (): boolean => {
-    return Private.isenabledandheadingSelected(shell, tracker);
+  const isEnabledAndHeadingSelected = (): boolean => {
+    return Private.isEnabledAndHeadingSelected(shell, tracker);
   };
 
   // Set up collapse signal for each header cell in a notebook
@@ -2195,7 +2195,7 @@ function addCommands(
         return NotebookActions.toggleCurrentCellCollapse(current.content);
       }
     },
-    isEnabled: isenabledandheadingSelected
+    isEnabled: isEnabledAndHeadingSelected
   });
   commands.addCommand(CommandIDs.collapseAllCmd, {
     label: 'Collapse All Cells',
@@ -2633,7 +2633,7 @@ namespace Private {
   /**
    * Whether there is an notebook active, with a single selected cell.
    */
-  export function isenabledandheadingSelected(
+  export function isEnabledAndHeadingSelected(
     shell: JupyterFrontEnd.IShell,
     tracker: INotebookTracker
   ): boolean {
