@@ -1459,7 +1459,7 @@ export namespace NotebookActions {
         subCellheadingInfo.isHeading &&
         subCellheadingInfo.headingLevel <= selectedheadingInfo.headingLevel
       ) {
-        // then reached an equivalent or higher header level than the
+        // then reached an equivalent or higher heading level than the
         // original the end of the collapse.
         cellNum -= 1;
         break;
@@ -1475,7 +1475,7 @@ export namespace NotebookActions {
 
       if (collapsing || localCollapsed) {
         // then no extra handling is needed for further locally collapsed
-        // headers.
+        // headings.
         subCell.setHidden(true);
         continue;
       }
@@ -1483,8 +1483,8 @@ export namespace NotebookActions {
       if (subCellheadingInfo.collapsed && subCellheadingInfo.isHeading) {
         localCollapsed = true;
         localCollapsedLevel = subCellheadingInfo.headingLevel;
-        // but don't collapse the locally collapsed header, so continue to
-        // uncollapse the header. This will get noticed in the next round.
+        // but don't collapse the locally collapsed heading, so continue to
+        // uncollapse the heading. This will get noticed in the next round.
       }
       subCell.setHidden(false);
     }
@@ -1499,7 +1499,7 @@ export namespace NotebookActions {
 
   /**
    * Toggles the collapse state of the active cell of the given notebook
-   * and ** all of its "child" cells ** if the cell is a header.
+   * and ** all of its "child" cells ** if the cell is a heading.
    *
    * @param notebook - The target notebook widget.
    */
@@ -1520,7 +1520,7 @@ export namespace NotebookActions {
   }
 
   /**
-   * If cell is a markdown header, sets the headingCollapsed field,
+   * If cell is a markdown heading, sets the headingCollapsed field,
    * and otherwise hides the cell.
    *
    * @param cell - The cell to collapse / uncollapse
@@ -1535,8 +1535,8 @@ export namespace NotebookActions {
   }
 
   /**
-   * If given cell is a markdown header, returns the header level.
-   * If given cell is not markdown, returns 7 (there are only 6 levels of markdown headers)
+   * If given cell is a markdown heading, returns the heading level.
+   * If given cell is not markdown, returns 7 (there are only 6 levels of markdown headings)
    *
    * @param cell - The target cell widget.
    */

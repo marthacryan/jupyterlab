@@ -1432,8 +1432,8 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
   }
 
   /**
-   * Text that represents the header if cell is a header.
-   * Returns empty string if not a header.
+   * Text that represents the heading if cell is a heading.
+   * Returns empty string if not a heading.
    */
   get headingInfo(): { text: string; level: number } {
     let text = this.model.value.text;
