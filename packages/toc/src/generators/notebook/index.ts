@@ -116,7 +116,7 @@ function createNotebookGenerator(
     for (let i = 0; i < panel.content.widgets.length; i++) {
       let cell: Cell = panel.content.widgets[i];
       let model = cell.model;
-      let collapsed = model.metadata.get('toc-hr-collapsed') as boolean;
+      let collapsed = cell instanceof MarkdownCell && cell.headingCollapsed;
       collapsed = collapsed || false;
 
       if (model.type === 'code') {

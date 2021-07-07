@@ -1506,6 +1506,7 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
       );
     }
     this.renderCollapseButtons(this._renderer!);
+    this._toggleCollapsedSignal.emit(this._headingCollapsed);
   }
 
   get numberChildNodes(): number {
@@ -1557,7 +1558,6 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
       } no-repeat center`;
       collapseButton.onclick = (event: Event) => {
         this.headingCollapsed = !this.headingCollapsed;
-        this._toggleCollapsedSignal.emit(this._headingCollapsed);
       };
     }
   }
@@ -1582,7 +1582,6 @@ export class MarkdownCell extends AttachmentsCell<IMarkdownCellModel> {
       numberChildNodes.appendChild(numberChildNodesText);
       numberChildNodes.onclick = () => {
         this.headingCollapsed = false;
-        this._toggleCollapsedSignal.emit(this._headingCollapsed);
       };
       this.node.appendChild(numberChildNodes);
     } else if (expandButton?.[0]?.childNodes?.length > 1) {

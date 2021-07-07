@@ -1,6 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import { MarkdownCell } from '@jupyterlab/cells';
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ellipsesIcon } from '@jupyterlab/ui-components';
 import * as React from 'react';
@@ -57,25 +58,26 @@ function render(
           </div>
         );
 
-        let collapsed;
-        if (item.cellRef!.model.metadata.has('toc-hr-collapsed')) {
-          collapsed = item.cellRef!.model.metadata.get(
-            'toc-hr-collapsed'
-          ) as boolean;
+        let collapseHeadingButton;
+        const cell = item.cellRef;
+        if (cell instanceof MarkdownCell && cell.headingInfo.level > 0) {
+          collapseHeadingButton = (
+            <button
+              className="bp3-button bp3-minimal jp-Button minimal jp-collapseHeadingButton"
+              style={{
+                background: `${
+                  cell.headingCollapsed
+                    ? 'var(--jp-icon-caret-right)'
+                    : 'var(--jp-icon-caret-down)'
+                } no-repeat center`,
+                display: 'block'
+              }}
+              onClick={() => {
+                cell.headingCollapsed = !cell.headingCollapsed;
+              }}
+            />
+          );
         }
-        let ellipseButton = collapsed ? (
-          <div
-            className="toc-Ellipses"
-            onClick={(event: any) => {
-              event.stopPropagation();
-              onClick(item);
-            }}
-          >
-            <ellipsesIcon.react />
-          </div>
-        ) : (
-          <div />
-        );
 
         // Render the heading item:
         jsx = (
@@ -91,8 +93,8 @@ function render(
             }
           >
             {button}
+            {collapseHeadingButton}
             {jsx}
-            {ellipseButton}
           </div>
         );
       }
@@ -118,10 +120,8 @@ function render(
           </div>
         );
         let collapsed;
-        if (item.cellRef!.model.metadata.has('toc-hr-collapsed')) {
-          collapsed = item.cellRef!.model.metadata.get(
-            'toc-hr-collapsed'
-          ) as boolean;
+        if (item.cellRef instanceof MarkdownCell) {
+          collapsed = item.cellRef.headingCollapsed;
         }
         let ellipseButton = collapsed ? (
           <div
@@ -178,15 +178,11 @@ function render(
    * @param heading - notebook heading that was clicked
    */
   function onClick(heading?: INotebookHeading) {
-    let collapsed;
-    if (heading!.cellRef!.model.metadata.has('toc-hr-collapsed')) {
-      collapsed = heading!.cellRef!.model.metadata.get(
-        'toc-hr-collapsed'
-      ) as boolean;
-      heading!.cellRef!.model.metadata.delete('toc-hr-collapsed');
-    } else {
-      collapsed = false;
-      heading!.cellRef!.model.metadata.set('toc-hr-collapsed', true);
+    let collapsed = false;
+    const cell = heading?.cellRef;
+    if (cell instanceof MarkdownCell) {
+      collapsed = !cell.headingCollapsed;
+      cell.headingCollapsed = collapsed;
     }
     if (heading) {
       options.updateAndCollapse({

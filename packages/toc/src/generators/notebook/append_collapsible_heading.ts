@@ -3,6 +3,7 @@
 
 import { INotebookHeading } from '../../utils/headings';
 import { isHeadingFiltered } from './is_heading_filtered';
+import { MarkdownCell } from '@jupyterlab/cells';
 
 /**
  * Appends a collapsible notebook heading to a list of headings.
@@ -54,9 +55,8 @@ function appendCollapsibleHeading(
     }
     // If there is no parent, reset collapsing...
     if (parent) {
-      const isCollapsed = headings[k + 1].cellRef.model.metadata.get(
-        'toc-hr-collapsed'
-      ) as boolean;
+      const cell = headings[k + 1].cellRef;
+      const isCollapsed = cell instanceof MarkdownCell && cell.headingCollapsed;
       collapseLevel = isCollapsed ? headings[k + 1].level : -1;
     } else {
       prev = null;
