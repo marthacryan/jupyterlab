@@ -23,9 +23,10 @@ import { getLastHeadingLevel } from './get_last_heading_level';
 import { getMarkdownHeadings } from './get_markdown_heading';
 import { getRenderedHTMLHeadings } from './get_rendered_html_heading';
 import { OptionsManager } from './options_manager';
-import { render } from './render';
+import { NotebookItem } from './render';
 import { toolbar } from './toolbar_generator';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
+import React from 'react';
 
 /**
  * Returns a ToC generator for notebooks.
@@ -94,7 +95,9 @@ function createNotebookGenerator(
    * @returns rendered item
    */
   function renderItem(item: INotebookHeading, toc: INotebookHeading[] = []) {
-    return render(options, tracker, item, toc);
+    return (
+      <NotebookItem options={options} tracker={tracker} item={item} toc={toc} />
+    );
   }
 
   /**

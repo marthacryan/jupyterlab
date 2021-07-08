@@ -10,6 +10,13 @@ import { sanitizerOptions } from '../../utils/sanitizer_options';
 import { CodeComponent } from './codemirror';
 import { OptionsManager } from './options_manager';
 
+interface INotebookItemProps {
+  options: OptionsManager;
+  tracker: INotebookTracker;
+  item: INotebookHeading;
+  toc?: INotebookHeading[];
+}
+
 /**
  * Renders a notebook table of contents item.
  *
@@ -20,12 +27,12 @@ import { OptionsManager } from './options_manager';
  * @param toc - current list of notebook headings
  * @returns rendered item
  */
-function render(
-  options: OptionsManager,
-  tracker: INotebookTracker,
-  item: INotebookHeading,
-  toc: INotebookHeading[] = []
-) {
+const NotebookItem: React.FC<INotebookItemProps> = ({
+  options,
+  tracker,
+  item,
+  toc = []
+}: INotebookItemProps) => {
   let jsx;
   if (item.type === 'markdown' || item.type === 'header') {
     let fontSizeClass = 'toc-level-size-default';
@@ -39,7 +46,7 @@ function render(
           dangerouslySetInnerHTML={{
             __html:
               numbering +
-              options.sanitizer.sanitize(item.html, sanitizerOptions)
+              options.sanitizer?.sanitize(item.html, sanitizerOptions)
           }}
           className={item.type + '-cell toc-cell-item'}
         />
@@ -63,6 +70,7 @@ function render(
         if (cell instanceof MarkdownCell && cell.headingInfo.level > 0) {
           collapseHeadingButton = (
             <button
+              id={`toc-CollapseButton-${cell.model.id}`}
               className="bp3-button bp3-minimal jp-Button minimal jp-collapseHeadingButton"
               style={{
                 background: `${
@@ -73,6 +81,16 @@ function render(
                 display: 'block'
               }}
               onClick={() => {
+                const currentCollapseButton = document.getElementById(
+                  `toc-CollapseButton-${cell.model.id}`
+                );
+                if (currentCollapseButton) {
+                  currentCollapseButton.style.background = `${
+                    !cell.headingCollapsed
+                      ? 'var(--jp-icon-caret-right)'
+                      : 'var(--jp-icon-caret-down)'
+                  } no-repeat center`;
+                }
                 cell.headingCollapsed = !cell.headingCollapsed;
               }}
             />
@@ -195,7 +213,7 @@ function render(
       options.updateWidget();
     }
   }
-}
+};
 
 /**
  * Used to find the nearest above heading to an active notebook cell
@@ -234,4 +252,4 @@ function previousHeader(
 /**
  * Exports.
  */
-export { render };
+export { NotebookItem };
